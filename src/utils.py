@@ -11,7 +11,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class CheckCounter(object):
-
     def __init__(self, name, must_change=True, required=False):
         """
 
@@ -35,53 +34,65 @@ def list_alveos(remote_host_ip):
     :return: a dictionary of dictionaries of available Alveos and respective parameters
     """
 
-    alveos={}    #empty dictionary detailing available alveo connections in given port range on given host
+    alveos = (
+        {}
+    )  # empty dictionary detailing available alveo connections in given port range on given host
 
-    for remote_port in range(7150,7160,2):
-      #in order to get the output of this function "neat", first look for open TCP sockets
-      #in the given port range, then check if it's a tcpbs svr on the other end. This is due
-      #to the difficulty in catching the "tornado lib" callback exception with a try..except block
-      #and leads to a verbose (and non-concise) output, flooding the user interface with
-      #(unnecessary) traceback output, so the strategy followed is in mitigation of this.
-      #Basically, just tell the user what he/she has asked for - the available alveos.
+    for remote_port in range(7150, 7160, 2):
+        # in order to get the output of this function "neat", first look for open TCP sockets
+        # in the given port range, then check if it's a tcpbs svr on the other end. This is due
+        # to the difficulty in catching the "tornado lib" callback exception with a try..except block
+        # and leads to a verbose (and non-concise) output, flooding the user interface with
+        # (unnecessary) traceback output, so the strategy followed is in mitigation of this.
+        # Basically, just tell the user what he/she has asked for - the available alveos.
 
-      sock    = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      remote  = (remote_host_ip, remote_port)
-      result = sock.connect_ex(remote);
-      sock.close()    #don't need this socket anymore, so close
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        remote = (remote_host_ip, remote_port)
+        result = sock.connect_ex(remote)
+        sock.close()  # don't need this socket anymore, so close
 
-      if result == 0:
-        #this means theres a stream connection available on this remote port
-        #let's see if it's tcpbs on the other end
-        timeout=1
-        try:
-          board = katcp.BlockingClient(host=remote_host_ip, port=remote_port, timeout=timeout)
-          board.setDaemon(True)
-          board.start()
-          connected = board.wait_connected(timeout)
+        if result == 0:
+            # this means theres a stream connection available on this remote port
+            # let's see if it's tcpbs on the other end
+            timeout = 1
+            try:
+                board = katcp.BlockingClient(
+                    host=remote_host_ip, port=remote_port, timeout=timeout
+                )
+                board.setDaemon(True)
+                board.start()
+                connected = board.wait_connected(timeout)
 
-          if connected:
-          #have to block here (ie sleep) else board obj gets stopped before it's used (so it seems)
-            time.sleep(1)
-            boardtype = board.versions
-            if 'alveo-card' in boardtype:
-              #print('[katcp] port=%d\ttype=%-20s\tserial=%s' % (remote_port, boardtype['alveo-card'][0], boardtype['alveo-serial'][0]))
-              alveos[boardtype['alveo-card'][0]]={}    #alveos is now dictionary of dictionaries. This key should be unique
-              alveos[boardtype['alveo-card'][0]]['proto']='katcp'
-              alveos[boardtype['alveo-card'][0]]['host']=remote_host_ip
-              alveos[boardtype['alveo-card'][0]]['port']=remote_port
-              alveos[boardtype['alveo-card'][0]]['serial']=boardtype['alveo-serial'][0]
+                if connected:
+                    # have to block here (ie sleep) else board obj gets stopped before it's used (so it seems)
+                    time.sleep(1)
+                    boardtype = board.versions
+                    if "alveo-card" in boardtype:
+                        # print('[katcp] port=%d\ttype=%-20s\tserial=%s' % (remote_port, boardtype['alveo-card'][0], boardtype['alveo-serial'][0]))
+                        alveos[
+                            boardtype["alveo-card"][0]
+                        ] = (
+                            {}
+                        )  # alveos is now dictionary of dictionaries. This key should be unique
+                        alveos[boardtype["alveo-card"][0]]["proto"] = "katcp"
+                        alveos[boardtype["alveo-card"][0]]["host"] = remote_host_ip
+                        alveos[boardtype["alveo-card"][0]]["port"] = remote_port
+                        alveos[boardtype["alveo-card"][0]]["serial"] = boardtype[
+                            "alveo-serial"
+                        ][0]
 
-            #else:
-            #  print('[katcp] port=%d\ttype=%-20s\tserial=None' % (remote_port, "None"))
+                    # else:
+                    #  print('[katcp] port=%d\ttype=%-20s\tserial=None' % (remote_port, "None"))
 
-          board.stop()
+                board.stop()
 
-        except AttributeError:
-          raise RuntimeError("Please ensure that katcp-python >=v0.6.3 is being used")
+            except AttributeError:
+                raise RuntimeError(
+                    "Please ensure that katcp-python >=v0.6.3 is being used"
+                )
 
-        except Exception:
-          pass
+            except Exception:
+                pass
 
     return alveos
 
@@ -99,16 +110,17 @@ def create_meta_dictionary(metalist):
             if name not in meta_items:
                 meta_items[name] = {}
             try:
-                if meta_items[name]['tag'] != tag:
+                if meta_items[name]["tag"] != tag:
                     raise ValueError(
-                        'Different tags - %s, %s - for the same item %s' % (
-                            meta_items[name]['tag'], tag, name))
+                        "Different tags - %s, %s - for the same item %s"
+                        % (meta_items[name]["tag"], tag, name)
+                    )
             except KeyError:
-                meta_items[name]['tag'] = tag
+                meta_items[name]["tag"] = tag
             meta_items[name][param] = value
     except ValueError as e:
         for ctr, contents in enumerate(metalist):
-            print(ctr, end='')
+            print(ctr, end="")
             print(contents)
         raise e
     return meta_items
@@ -126,10 +138,10 @@ def get_hostname(**kwargs):
 
     :param kwargs:
     """
-    host = kwargs['host']
-    bitstream = get_kwarg('bitstream', kwargs)
-    if ',' in host:
-        host, bitstream = host.split(',')
+    host = kwargs["host"]
+    bitstream = get_kwarg("bitstream", kwargs)
+    if "," in host:
+        host, bitstream = host.split(",")
     return host, bitstream
 
 
@@ -143,40 +155,42 @@ def parse_fpg(filename, isbuf=False):
     :return: device info dictionary, memory map info (coreinfo.tab) dictionary
     """
 
-
-    LOGGER.debug('Parsing file %s for system information' % filename)
+    LOGGER.debug("Parsing file %s for system information" % filename)
     if filename is not None:
         if not isbuf:
-            fptr = open(filename, 'rb')
+            fptr = open(filename, "rb")
         else:
             fptr = filename
-        firstline = fptr.readline().decode('latin-1').strip().rstrip('\n')
-        if firstline != '#!/bin/kcpfpg':
+        firstline = fptr.readline().decode("latin-1").strip().rstrip("\n")
+        if firstline != "#!/bin/kcpfpg":
             fptr.close()
-            raise RuntimeError('%s does not look like an fpg file we can '
-                               'parse.' % filename)
+            raise RuntimeError(
+                "%s does not look like an fpg file we can " "parse." % filename
+            )
     else:
-        raise IOError('No such file %s' % filename)
+        raise IOError("No such file %s" % filename)
 
     memorydict = {}
     metalist = []
     while True:
-        line = fptr.readline().decode('latin-1').strip().rstrip('\n')
-        if line.lstrip().rstrip() == '?quit':
+        line = fptr.readline().decode("latin-1").strip().rstrip("\n")
+        if line.lstrip().rstrip() == "?quit":
             break
-        elif line.startswith('?meta'):
+        elif line.startswith("?meta"):
             # some versions of mlib_devel may mistakenly have put spaces
             # as delimiters where tabs should have been used. Rectify that
             # here.
-            if line.startswith('?meta '):
-                LOGGER.warn('An old version of mlib_devel generated %s. Please '
-                            'update. Meta fields are seperated by spaces, '
-                            'should be tabs.' % filename)
-                line = line.replace(' ', '\t')
+            if line.startswith("?meta "):
+                LOGGER.warn(
+                    "An old version of mlib_devel generated %s. Please "
+                    "update. Meta fields are seperated by spaces, "
+                    "should be tabs." % filename
+                )
+                line = line.replace(" ", "\t")
             # and carry on as usual.
-            line = line.replace('\_', ' ').replace('?meta', '')
-            line = line.replace('\n', '').lstrip().rstrip()
-            #line_split = line.split('\t')
+            line = line.replace("\_", " ").replace("?meta", "")
+            line = line.replace("\n", "").lstrip().rstrip()
+            # line_split = line.split('\t')
             # Rather split on any space
             line_split = line.split()
             name = line_split[0]
@@ -185,30 +199,31 @@ def parse_fpg(filename, isbuf=False):
             if len(line_split[3:]) == 1:
                 value = line_split[3:][0]
             else:
-                value = ' '.join(line_split[3:])
+                value = " ".join(line_split[3:])
             # name, tag, param, value = line.split('\t')
-            name = name.replace('/', '_')
+            name = name.replace("/", "_")
             metalist.append((name, tag, param, value))
-        elif line.startswith('?register'):
-            if line.startswith('?register '):
-                register = line.replace('\_', ' ').replace('?register ', '')
-                register = register.replace('\n', '').lstrip().rstrip()
-                name, address, size_bytes = register.split(' ')
-            elif line.startswith('?register\t'):
-                register = line.replace('\_', ' ').replace('?register\t', '')
-                register = register.replace('\n', '').lstrip().rstrip()
-                name, address, size_bytes = register.split('\t')
+        elif line.startswith("?register"):
+            if line.startswith("?register "):
+                register = line.replace("\_", " ").replace("?register ", "")
+                register = register.replace("\n", "").lstrip().rstrip()
+                name, address, size_bytes = register.split(" ")
+            elif line.startswith("?register\t"):
+                register = line.replace("\_", " ").replace("?register\t", "")
+                register = register.replace("\n", "").lstrip().rstrip()
+                name, address, size_bytes = register.split("\t")
             else:
-                raise ValueError('Cannot find ?register entries in '
-                                 'correct format.')
+                raise ValueError("Cannot find ?register entries in " "correct format.")
             address = int(address, 16)
             size_bytes = int(size_bytes, 16)
             if name in memorydict.keys():
-                raise RuntimeError('%s: mem device %s already in '
-                                   'dictionary' % (filename, name))
-            memorydict[name] = {'address': address, 'bytes': size_bytes}
+                raise RuntimeError(
+                    "%s: mem device %s already in " "dictionary" % (filename, name)
+                )
+            memorydict[name] = {"address": address, "bytes": size_bytes}
     fptr.close()
     return create_meta_dictionary(metalist), memorydict
+
 
 def get_git_info_from_fpg(fpg_file):
     """
@@ -218,7 +233,7 @@ def get_git_info_from_fpg(fpg_file):
              - key = git-repo
              - value = git-version
     """
-    git_tag = '77777_git'
+    git_tag = "77777_git"
     git_info_dict = None
 
     # This returns a tuple of dictionaries,
@@ -230,11 +245,12 @@ def get_git_info_from_fpg(fpg_file):
 
     git_info_dict = fpg_metadata.get(git_tag, None)
     try:
-        git_info_dict.pop('tag')
+        git_info_dict.pop("tag")
         return git_info_dict
     except KeyError:
         # tag: rcs entry isn't there, no worries
         return git_info_dict
+
 
 def pull_info_from_fpg(fpg_file, parameter):
     """
@@ -242,37 +258,36 @@ def pull_info_from_fpg(fpg_file, parameter):
     Available options for x-engine: 'x_fpga_clock', 'xeng_outbits',
     'xeng_accumulation_len'
     Available options for f-engine: 'n_chans', 'quant_format', 'spead_flavour'
-    
+
     :param fpg_file: bit file path
     :param parameter: parameter string
     :return: pattern value (string)
     """
     match = []
     fpg_dict = parse_fpg(fpg_file)
-    if parameter == 'x_fpga_clock':
-        match = str(int(fpg_dict[0]['XSG_core_config']['clk_rate'])*10**6)
-    if parameter == 'xeng_outbits':
-        match = fpg_dict[0]['sys0_vacc']['n_bits']
-    if parameter == 'xeng_accumulation_len':
-        match = fpg_dict[0]['sys0_xeng']['acc_len']
-    if parameter == 'spead_flavour':
-        match1 = fpg_dict[0]['pack_spead_pack0']['spead_msw']
-        match2 = fpg_dict[0]['pack_spead_pack0']['spead_lsw']
-        s = ','
+    if parameter == "x_fpga_clock":
+        match = str(int(fpg_dict[0]["XSG_core_config"]["clk_rate"]) * 10**6)
+    if parameter == "xeng_outbits":
+        match = fpg_dict[0]["sys0_vacc"]["n_bits"]
+    if parameter == "xeng_accumulation_len":
+        match = fpg_dict[0]["sys0_xeng"]["acc_len"]
+    if parameter == "spead_flavour":
+        match1 = fpg_dict[0]["pack_spead_pack0"]["spead_msw"]
+        match2 = fpg_dict[0]["pack_spead_pack0"]["spead_lsw"]
+        s = ","
         match = s.join([match1, match2])
-    if parameter == 'quant_format':
-        match1 = fpg_dict[0]['snap_quant0']['io_widths']
-        match2 = fpg_dict[0]['snap_quant0']['io_bps']
-        s = '.'
+    if parameter == "quant_format":
+        match1 = fpg_dict[0]["snap_quant0"]["io_widths"]
+        match2 = fpg_dict[0]["snap_quant0"]["io_bps"]
+        s = "."
         match = s.join([match1[1], match2[1]])
-    if parameter == 'n_chans':
-        pfb_dict = fpg_dict[0]['pfb_fft_wideband_real_fft_biplex_real_4x']
-        match1 = int(pfb_dict['fftsize'])
-        match2 = int(pfb_dict['n_inputs'])
-        match = match2*2**match1
+    if parameter == "n_chans":
+        pfb_dict = fpg_dict[0]["pfb_fft_wideband_real_fft_biplex_real_4x"]
+        match1 = int(pfb_dict["fftsize"])
+        match2 = int(pfb_dict["n_inputs"])
+        match = match2 * 2**match1
     if match is []:
-        errstr = 'Parameter %s does not match any field in fpg ' \
-                 'file.' % parameter
+        errstr = "Parameter %s does not match any field in fpg " "file." % parameter
         LOGGER.error(errstr)
         raise RuntimeError(errstr)
     return match
@@ -281,7 +296,7 @@ def pull_info_from_fpg(fpg_file, parameter):
 def check_changing_status(counters, data_function, wait_time, num_checks):
     """
     Check a changing set of status fields.
-    
+
     :param counters: a list of CheckCounters
     :param data_function: a function that will return a single value for the
         fields from field_dict
@@ -303,7 +318,7 @@ def check_changing_status(counters, data_function, wait_time, num_checks):
     #     res['test_same'] = 654321
     #     return res
     if num_checks < 2:
-        raise ValueError('num_checks of less than two makes no sense')
+        raise ValueError("num_checks of less than two makes no sense")
     # check that required data fields are returned by the data function
     change_required = {}
     d = data_function()
@@ -311,7 +326,7 @@ def check_changing_status(counters, data_function, wait_time, num_checks):
     for checkctr in counters:
         if checkctr.name not in d:
             if checkctr.required:
-                return False, 'required field %s not found' % checkctr.name
+                return False, "required field %s not found" % checkctr.name
             to_remove.append(checkctr.name)
         else:
             checkctr.data = d[checkctr.name]
@@ -332,20 +347,22 @@ def check_changing_status(counters, data_function, wait_time, num_checks):
             else:
                 # must stay the same
                 if ctrnew != checkctr.data:
-                    return False, '%s changing: %.3f > %.3f' % (
-                        checkctr.name, checkctr.data, ctrnew)
+                    return False, "%s changing: %.3f > %.3f" % (
+                        checkctr.name,
+                        checkctr.data,
+                        ctrnew,
+                    )
         time.sleep(wait_time)
     for checkctr in counters:
         if checkctr.must_change and (not checkctr.changed):
-            return False, '%s is not changing: %.3f' % (
-                checkctr.name, checkctr.data)
-    return True, ''
+            return False, "%s is not changing: %.3f" % (checkctr.name, checkctr.data)
+    return True, ""
 
 
 def program_fpgas(fpga_list, progfile, timeout=10):
     """
     Program more than one FPGA at the same time.
-    
+
     :param fpga_list: a list of objects for the FPGAs to be programmed
     :param progfile: string, the file used to program the FPGAs
     :param timeout: how long to wait for a response, in seconds
@@ -361,14 +378,16 @@ def program_fpgas(fpga_list, progfile, timeout=10):
     else:
         for fpga in fpga_list:
             fpga.bitstream = progfile
-    threaded_fpga_function(fpga_list, 60, 'upload_to_ram_and_program')
-    LOGGER.info('Programming %d FPGAs took %.3f seconds.' % (
-        len(fpga_list), time.time() - stime))
+    threaded_fpga_function(fpga_list, 60, "upload_to_ram_and_program")
+    LOGGER.info(
+        "Programming %d FPGAs took %.3f seconds."
+        % (len(fpga_list), time.time() - stime)
+    )
 
 
-def threaded_create_fpgas_from_hosts(host_list, fpga_class=None,
-                                     port=7147, timeout=10,
-                                     best_effort=False, **kwargs):
+def threaded_create_fpgas_from_hosts(
+    host_list, fpga_class=None, port=7147, timeout=10, best_effort=False, **kwargs
+):
     """
     Create KatcpClientFpga objects in many threads, Moar FASTAAA!
 
@@ -380,6 +399,7 @@ def threaded_create_fpgas_from_hosts(host_list, fpga_class=None,
     """
     if fpga_class is None:
         from .casperfpga import CasperFpga
+
         fpga_class = CasperFpga
 
     num_hosts = len(host_list)
@@ -408,9 +428,11 @@ def threaded_create_fpgas_from_hosts(host_list, fpga_class=None,
             break
     if hosts_missing:
         for host in hosts_missing:
-            LOGGER.error('Could not create host %s.' % host)
-        errstr = 'Given %d hosts, only made %d CasperFpgas.' % (
-            num_hosts, num_hosts-len(hosts_missing))
+            LOGGER.error("Could not create host %s." % host)
+        errstr = "Given %d hosts, only made %d CasperFpgas." % (
+            num_hosts,
+            num_hosts - len(hosts_missing),
+        )
         LOGGER.error(errstr)
         if best_effort:
             rv = []
@@ -440,7 +462,7 @@ def _check_target_func(target_function):
     elif len(target_function) == 2:
         target_function = (target_function[0], target_function[1], {})
     else:
-        raise RuntimeError('target_function tuple too long? - (name, (), {})')
+        raise RuntimeError("target_function tuple too long? - (name, (), {})")
     return target_function
 
 
@@ -466,21 +488,26 @@ def threaded_fpga_function(fpga_list, timeout, target_function):
             rv = getattr(fpga, target_function[0])(*args, **kwargs)
             return rv
         except AttributeError:
-            LOGGER.error('FPGA %s has no such function: %s' % (
-                fpga.host, target_function[0]))
+            LOGGER.error(
+                "FPGA %s has no such function: %s" % (fpga.host, target_function[0])
+            )
             raise
+
     return threaded_fpga_operation(
-        fpga_list, timeout, (dofunc, target_function[1], target_function[2]))
+        fpga_list, timeout, (dofunc, target_function[1], target_function[2])
+    )
 
 
-def threaded_fpga_operation(fpga_list, timeout, target_function, num_retries=5, retry_sleep_time=5):
+def threaded_fpga_operation(
+    fpga_list, timeout, target_function, num_retries=5, retry_sleep_time=5
+):
     """
     Thread any operation against many FPGA objects
 
     :param fpga_list: list of KatcpClientFpga objects
     :param timeout: how long to wait before timing out
     :param target_function: a tuple with three parts:
-                            
+
                             1. reference, the function object that must be
                                run - MUST take FPGA object as first argument
                             2. tuple, the arguments to the function
@@ -516,16 +543,18 @@ def threaded_fpga_operation(fpga_list, timeout, target_function, num_retries=5, 
             except Queue.Empty:
                 break
         return returnval, hosts_missing
-    
+
     retry = 0
     current_fpga_list = fpga_list[:]
     while retry < num_retries:
         returnval, hosts_missing = run_threaded_op(current_fpga_list)
         if hosts_missing:
-            #warnmsg = ('Ran function {} on hosts. Did not get a response '
+            # warnmsg = ('Ran function {} on hosts. Did not get a response '
             #           'from {}.'.format(target_function[0].__name__, hosts_missing))
-            warnmsg = ('Ran function {} on hosts. Did not get a response '
-                       'from {}.'.format(target_function[0].func_name, hosts_missing))
+            warnmsg = (
+                "Ran function {} on hosts. Did not get a response "
+                "from {}.".format(target_function[0].func_name, hosts_missing)
+            )
             LOGGER.warning(warnmsg)
             retry += 1
             new_fpga_list = []
@@ -536,8 +565,10 @@ def threaded_fpga_operation(fpga_list, timeout, target_function, num_retries=5, 
             time.sleep(retry_sleep_time)
 
     if hosts_missing:
-        errmsg = 'Ran function \'%s\' on hosts. Did not get a response ' \
-                 'from %s.' % (target_function[0].__name__, hosts_missing)
+        errmsg = "Ran function '%s' on hosts. Did not get a response " "from %s." % (
+            target_function[0].__name__,
+            hosts_missing,
+        )
         LOGGER.error(errmsg)
     return returnval
 
@@ -546,7 +577,7 @@ def threaded_non_blocking_request(fpga_list, timeout, request, request_args):
     """
     Make a non-blocking KatCP request to a list of KatcpClientFpgas, using
     the Asynchronous client.
-    
+
     :param fpga_list: list of KatcpClientFpga objects
     :param timeout: the request timeout
     :param request: the request string
@@ -564,19 +595,20 @@ def threaded_non_blocking_request(fpga_list, timeout, request, request_args):
 
     # reply callback
     def reply_cb(host, req_id):
-        LOGGER.debug('Reply(%s) from host(%s)' % (req_id, host))
+        LOGGER.debug("Reply(%s) from host(%s)" % (req_id, host))
         reply_queue.put_nowait([host, req_id])
 
     # start the requests
-    LOGGER.debug('Send request(%s) to %i hosts.' % (request, num_fpgas))
+    LOGGER.debug("Send request(%s) to %i hosts." % (request, num_fpgas))
     lock = threading.Lock()
     for fpga_ in fpga_list:
         lock.acquire()
         req = fpga_.nb_request(request, None, reply_cb, *request_args)
-        requests[req['host']] = [req['request'], req['id']]
+        requests[req["host"]] = [req["request"], req["id"]]
         lock.release()
-        LOGGER.debug('Request \'%s\' id(%s) to host(%s)' % (
-            req['request'], req['id'], req['host']))
+        LOGGER.debug(
+            "Request '%s' id(%s) to host(%s)" % (req["request"], req["id"], req["host"])
+        )
 
     # wait for replies from the requests
     timedout = False
@@ -591,9 +623,9 @@ def threaded_non_blocking_request(fpga_list, timeout, request, request_args):
         if len(replies) == num_fpgas:
             done = True
     if timedout:
-        LOGGER.error('non_blocking_request timeout after %is.' % timeout)
+        LOGGER.error("non_blocking_request timeout after %is." % timeout)
         LOGGER.error(replies)
-        raise RuntimeError('non_blocking_request timeout after %is.' % timeout)
+        raise RuntimeError("non_blocking_request timeout after %is." % timeout)
 
     # process the replies
     returnval = {}
@@ -603,41 +635,43 @@ def threaded_non_blocking_request(fpga_list, timeout, request, request_args):
         except KeyError:
             LOGGER.error(replies)
             raise KeyError(
-                'Didn\'t get a reply for FPGA \'%s\' so the request \'%s\' '
-                'probably didn\'t complete.' % (fpga_.host, request))
+                "Didn't get a reply for FPGA '%s' so the request '%s' "
+                "probably didn't complete." % (fpga_.host, request)
+            )
         reply, informs = fpga_.nb_get_request_result(request_id)
-        frv = {'request': requests[fpga_.host][0],
-               'reply': reply.arguments[0],
-               'reply_args': reply.arguments}
+        frv = {
+            "request": requests[fpga_.host][0],
+            "reply": reply.arguments[0],
+            "reply_args": reply.arguments,
+        }
         informlist = []
         for inf in informs:
             informlist.append(inf.arguments)
-        frv['informs'] = informlist
+        frv["informs"] = informlist
         returnval[fpga_.host] = frv
         fpga_.nb_pop_request_by_id(request_id)
     return returnval
 
 
-def hosts_from_dhcp_leases(host_pref=None,
-                           leases_file='/var/lib/misc/dnsmasq.leases'):
+def hosts_from_dhcp_leases(host_pref=None, leases_file="/var/lib/misc/dnsmasq.leases"):
     """
     Get a list of hosts from a leases file.
-    
+
     :param host_pref: the prefix of the hosts in which we're interested
     :param leases_file: the file to read
     """
     hosts = []
     if host_pref is None:
-        host_pref = ['roach', 'skarab']
+        host_pref = ["roach", "skarab"]
     if not isinstance(host_pref, list):
         host_pref = [host_pref]
     with open(leases_file) as masqfile:
         masqlines = masqfile.readlines()
     for line in masqlines:
-        (leasetime, mac, ip, host, mac2) = line.replace('\n', '').split(' ')
+        (leasetime, mac, ip, host, mac2) = line.replace("\n", "").split(" ")
         for host_prefix in host_pref:
             if host.startswith(host_prefix):
-                hosts.append(host if host != '*' else ip)
+                hosts.append(host if host != "*" else ip)
                 break
     return hosts, leases_file
 
@@ -648,9 +682,9 @@ def deprogram_hosts(host_list):
     :param host_list:
     """
     if len(host_list) == 0:
-        raise RuntimeError('No good carrying on without hosts.')
+        raise RuntimeError("No good carrying on without hosts.")
     fpgas = threaded_create_fpgas_from_hosts(host_list)
-    running = threaded_fpga_function(fpgas, 10, 'is_running')
+    running = threaded_fpga_function(fpgas, 10, "is_running")
     deprogrammed = []
     to_deprogram = []
     already_deprogrammed = []
@@ -660,12 +694,13 @@ def deprogram_hosts(host_list):
             to_deprogram.append(fpga)
         else:
             already_deprogrammed.append(fpga.host)
-    running = threaded_fpga_function(to_deprogram, 10, 'deprogram')
+    running = threaded_fpga_function(to_deprogram, 10, "deprogram")
     if len(deprogrammed) != 0:
-        print('%s: deprogrammed okay.' % deprogrammed)
+        print("%s: deprogrammed okay." % deprogrammed)
     if len(already_deprogrammed) != 0:
-        print('%s: already deprogrammed.' % already_deprogrammed)
-    threaded_fpga_function(fpgas, 10, 'disconnect')
+        print("%s: already deprogrammed." % already_deprogrammed)
+    threaded_fpga_function(fpgas, 10, "disconnect")
+
 
 def socket_closer(arg_caller, arg_socket):
     """
@@ -688,5 +723,6 @@ def socket_closer(arg_caller, arg_socket):
         arg_socket.close()
     except:
         pass
+
 
 # end

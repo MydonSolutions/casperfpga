@@ -19,17 +19,16 @@ def choose_processor(image_file):
     :param image_file:
     """
     file_extension = os.path.splitext(image_file)[1]
-    if file_extension == '.fpg':
+    if file_extension == ".fpg":
         return FpgProcessor
-    elif file_extension == '.hex':
+    elif file_extension == ".hex":
         return HexProcessor
-    elif file_extension == '.bit':
+    elif file_extension == ".bit":
         return BitProcessor
-    elif file_extension == '.bin':
+    elif file_extension == ".bin":
         return BinProcessor
     else:
-        raise TypeError('Invalid file type. Only use .fpg, .bit, '
-                        '.hex or .bin files')
+        raise TypeError("Invalid file type. Only use .fpg, .bit, " ".hex or .bin files")
 
 
 class ImageProcessor(object):
@@ -37,17 +36,18 @@ class ImageProcessor(object):
     Process a file used to program a CASPER host to get it into the correct
     format.
     """
+
     def __init__(self, image_file, bin_name=None, extract_to_disk=True):
         self.image_file = image_file
         if extract_to_disk:
-            if bin_name==None:
-                self.bin_name = '/tmp/casperstream_' + str(os.getpid()) + '.bin'
+            if bin_name == None:
+                self.bin_name = "/tmp/casperstream_" + str(os.getpid()) + ".bin"
             else:
                 self.bin_name = bin_name
         self.extract = extract_to_disk
 
     def make_bin(self):
-        """ 
+        """
         :return: name of a produced .bin file
         """
         raise NotImplementedError
@@ -57,8 +57,8 @@ class ImageProcessor(object):
 
         :return:
         """
-        LOGGER.debug('Extracting binary bitstream to {}'.format(self.bin_name))
-        bin_file = open(self.bin_name, 'wb')
+        LOGGER.debug("Extracting binary bitstream to {}".format(self.bin_name))
+        bin_file = open(self.bin_name, "wb")
         bin_file.write(bitstream)
         bin_file.close()
 
@@ -67,27 +67,29 @@ class FpgProcessor(ImageProcessor):
     """
     Process .fpg files to get .bin files.
     """
+
     def make_bin(self):
         """
         :return: the name of a produced .bin file
         """
-        fpg_file = open(self.image_file, 'r')
+        fpg_file = open(self.image_file, "r")
         fpg_contents = fpg_file.read()
         fpg_file.close()
 
         # scan for the end of the fpg header
-        if fpg_contents.find('?quit') == -1:
-            raise IOError('{} is not a valid fpg file!'.format(self.image_file))
+        if fpg_contents.find("?quit") == -1:
+            raise IOError("{} is not a valid fpg file!".format(self.image_file))
 
         # exract the bitstream portion of the file
-        bitstream_start = fpg_contents.find('?quit') + len('?quit') + 1
+        bitstream_start = fpg_contents.find("?quit") + len("?quit") + 1
         bitstream = fpg_contents[bitstream_start:]
 
         # check if bitstream is compressed using magic number for gzip
-        if bitstream.startswith('\x1f\x8b\x08'):
+        if bitstream.startswith("\x1f\x8b\x08"):
             import zlib
+
             bitstream = zlib.decompress(bitstream, 16 + zlib.MAX_WBITS)
-            LOGGER.debug('Decompressing compressed bitstream.')
+            LOGGER.debug("Decompressing compressed bitstream.")
 
         if not self.extract:
             return bitstream, None
@@ -99,14 +101,15 @@ class HexProcessor(ImageProcessor):
     """
     Process .hex files to get .bin files.
     """
+
     def make_bin(self):
         """
         Make a .bin file and return the name.
         :return:
         """
-        fptr = open(self.image_file, 'rb')  # read from
+        fptr = open(self.image_file, "rb")  # read from
         # for packing fpga image data into binary string use little endian
-        packer = struct.Struct('<H')
+        packer = struct.Struct("<H")
         file_size = os.path.getsize(self.image_file)
         # group 4 chars from the hex file to create 1 word in the bin file
         # see how many packets of 4096 words we can create without padding
@@ -114,7 +117,7 @@ class HexProcessor(ImageProcessor):
         # hex file)
         # each char = 1 nibble = 4 bits
         # TODO - replace i and j with meaningful loop variable names
-        bitstream = ''
+        bitstream = ""
         for i in range(file_size / 16384):
             # create packets of 4096 words
             for j in range(4096):
@@ -126,12 +129,12 @@ class HexProcessor(ImageProcessor):
 
         # get the last packet (required padding)
         last_pkt = fptr.read().rstrip()  # strip eof '\r\n' before padding
-        last_pkt += 'f' * (16384 - len(last_pkt))  # pad to 4096 word boundary
+        last_pkt += "f" * (16384 - len(last_pkt))  # pad to 4096 word boundary
         # close the file
         fptr.close()
         # handle last data chunk
         for wordctr in range(0, 16384, 4):
-            word = last_pkt[wordctr:wordctr + 4]  # grab 4 chars to form word
+            word = last_pkt[wordctr : wordctr + 4]  # grab 4 chars to form word
             bitstream += packer.pack(int(word, 16))  # pack into binary string
 
         if not self.extract:
@@ -144,6 +147,7 @@ class BitProcessor(ImageProcessor):
     """
     Process .bit files to get .bin files.
     """
+
     def make_bin(self):
         """
         Make a .bin file and return the name.
@@ -154,11 +158,11 @@ class BitProcessor(ImageProcessor):
         # the .fpg file and convert it to .bin format with required endianness
         # also strips away .bit file header
 
-        fptr = open(self.image_file, 'rb')  # read from
+        fptr = open(self.image_file, "rb")  # read from
         data = fptr.read()
         data = data.rstrip()  # get rid of pesky EOF chars
         # bin file header identifier - '\xff' * 32
-        header_end_index = data.find('\xff' * 32)
+        header_end_index = data.find("\xff" * 32)
         data = data[header_end_index:]
         fptr.close()
 
@@ -170,12 +174,12 @@ class BitProcessor(ImageProcessor):
         # this equates to reversing the bits in each byte in the file
 
         # for unpacking data from bit file and repacking
-        data_format = struct.Struct('!B')
-        bitstream = ''
+        data_format = struct.Struct("!B")
+        bitstream = ""
         for bytectr in range(len(data)):
             # reverse bits each byte
             byte = data_format.unpack(data[bytectr])[0]
-            bits = '{:08b}'.format(byte)
+            bits = "{:08b}".format(byte)
             bits_flipped = bits[::-1]
             byte_to_pack = int(bits_flipped, 2)
             bitstream += data_format.pack(byte_to_pack)
@@ -189,16 +193,17 @@ class BinProcessor(ImageProcessor):
     """
     Process .bin files to check compatibility.
     """
+
     def make_bin(self):
         """
         Make a .bin file and return the name.
         """
-        fptr = open(self.image_file, 'rb')
+        fptr = open(self.image_file, "rb")
         bitstream = fptr.read()
         fptr.close()
         # check if the valid header substring exists
-        valid_string = '\xff\xff\x00\x00\x00\xdd\x88\x44\x00\x22\xff\xff'
-        swapped_string = '\xff\xff\x00\x00\xdd\x00\x44\x88\x22\x00'
+        valid_string = "\xff\xff\x00\x00\x00\xdd\x88\x44\x00\x22\xff\xff"
+        swapped_string = "\xff\xff\x00\x00\xdd\x00\x44\x88\x22\x00"
         if bitstream.find(valid_string) == 30:
             if not self.extract:
                 return bitstream, None
@@ -214,9 +219,12 @@ class BinProcessor(ImageProcessor):
             return reordered_bitstream, self.bin_name
         # else: Still problem
         read_header = bitstream[30:41]
-        msg = 'Incompatible bitstream detected.\n' \
-              'Expected header: {}\nRead header: {}'.format(
-                repr(valid_string), repr(read_header))
+        msg = (
+            "Incompatible bitstream detected.\n"
+            "Expected header: {}\nRead header: {}".format(
+                repr(valid_string), repr(read_header)
+            )
+        )
         LOGGER.error(msg)
         raise ValueError(msg)
 
@@ -231,8 +239,8 @@ class BinProcessor(ImageProcessor):
         :return: reordered_bitstream
         """
         num_words = len(bitstream) / 2
-        data_format_pack = '<' + str(num_words) + 'H'
-        data_format_unpack = '>' + str(num_words) + 'H'
+        data_format_pack = "<" + str(num_words) + "H"
+        data_format_unpack = ">" + str(num_words) + "H"
         unpacked_format = struct.unpack(data_format_unpack, bitstream)
         reordered_bitstream = struct.pack(data_format_pack, *unpacked_format)
         return reordered_bitstream
@@ -246,7 +254,7 @@ def upload_to_ram_progska(filename, fpga_list, chunk_size=1988):
     :param fpga_list: a list of the CasperFpga objects
     """
     upload_start_time = time.time()
-    binname = '/tmp/fpgstream_' + str(os.getpid()) + '.bin'
+    binname = "/tmp/fpgstream_" + str(os.getpid()) + ".bin"
     processor = choose_processor(filename)
     processor = processor(filename, binname)
     binname = processor.make_bin()[1]
@@ -254,24 +262,24 @@ def upload_to_ram_progska(filename, fpga_list, chunk_size=1988):
 
     # clear sdram of all fpgas before uploading
     clear_skarabs_sdram(fpga_list)
-    
+
     if chunk_size not in [1988, 3976, 7952]:
-        raise sd.SkarabProgrammingError(
-           'chunk_size can only be 1988, 3976 or 7952')
+        raise sd.SkarabProgrammingError("chunk_size can only be 1988, 3976 or 7952")
         return 0
     try:
         retval = progska.upload(binname, fpga_hosts, str(chunk_size))
     except RuntimeError as exc:
         os.remove(binname)
-        raise sd.SkarabProgrammingError(
-            'progska returned error: %s' % exc.message)
+        raise sd.SkarabProgrammingError("progska returned error: %s" % exc.message)
     os.remove(binname)
     if retval != 0:
         raise sd.SkarabProgrammingError(
-            'progska returned nonzero exit code: %i' % retval)
+            "progska returned nonzero exit code: %i" % retval
+        )
     upload_time = time.time() - upload_start_time
-    LOGGER.debug('Uploaded bitstream to %s in %.1f seconds.' % (
-        fpga_hosts, upload_time))
+    LOGGER.debug(
+        "Uploaded bitstream to %s in %.1f seconds." % (fpga_hosts, upload_time)
+    )
     for fpga in fpga_list:
         fpga.transport._sdram_programmed = True
     return upload_time
@@ -287,18 +295,18 @@ def check_ufp_bitstream(filename):
     :return: tuple - (True/False, bitstream)
     """
 
-    contents = open(filename, 'rb').read()
+    contents = open(filename, "rb").read()
     if len(contents) < 1:
         # Problem
-        errmsg = 'Problem opening input .ufp file: %s'.format(filename)
+        errmsg = "Problem opening input .ufp file: %s".format(filename)
         LOGGER.error(errmsg)
         return False, None
     # else: Continue
 
     # Remove all CR and LF in .ufp file
-    escape_chars = ['\r', '\n']
+    escape_chars = ["\r", "\n"]
     for value in escape_chars:
-        contents = contents.replace(value, '')
+        contents = contents.replace(value, "")
 
     return True, contents
 
@@ -321,10 +329,12 @@ def analyse_ufp_bitstream(bitstream):
     num_sectors = num_pages / 256
     if num_pages % 256 != 0:
         num_sectors += 1
-    debugmsg = 'Returning num_pages: {} - num_sectors: {}'.format(
-        num_pages, num_sectors)
+    debugmsg = "Returning num_pages: {} - num_sectors: {}".format(
+        num_pages, num_sectors
+    )
     LOGGER.debug(debugmsg)
     return num_pages, num_sectors
+
 
 # def check_checksum(spartan_checksum, local_checksum):
 #     """
@@ -465,13 +475,13 @@ def analyse_file_virtex_flash(filename=None, bitstream=None):
     """
     if filename:
         # File contents are in bytes
-        fptr = open(filename, 'rb')
+        fptr = open(filename, "rb")
         bitstream = fptr.read()
         fptr.close()
     elif bitstream:
         pass
     else:
-        errmsg = 'Specify a file or a processed bitstream.'
+        errmsg = "Specify a file or a processed bitstream."
         LOGGER.error(errmsg)
         raise sd.SkarabInvalidBitstream(errmsg)
 
@@ -481,12 +491,13 @@ def analyse_file_virtex_flash(filename=None, bitstream=None):
             # hex file with carriage return (\n) at the end
             bitstream = bitstream[:-1]
         else:
-            errmsg = 'Invalid file size: Number of Words is not whole'
+            errmsg = "Invalid file size: Number of Words is not whole"
             LOGGER.error(errmsg)
             raise sd.SkarabInvalidBitstream(errmsg)
     # else: Continue
     num_words = len(bitstream) / 2
     from math import ceil
+
     num_memory_blocks = int(ceil(num_words / sd.DEFAULT_BLOCK_SIZE))
     return num_words, num_memory_blocks
 
@@ -583,35 +594,43 @@ def wait_after_reboot(fpgas, timeout=200, upload_time=-1):
         # print(loopctr)
         to_remove = []
         for fpga in missing:
-            status_str = 'checking ' + fpga.host + ':'
+            status_str = "checking " + fpga.host + ":"
             if fpga.transport.is_connected(retries=1, timeout=0.01):
-                status_str += ' up, checking firmware'
-                result, firmware_version = \
-                    fpga.transport.check_running_firmware(retries=1)
+                status_str += " up, checking firmware"
+                result, firmware_version = fpga.transport.check_running_firmware(
+                    retries=1
+                )
                 if result:
                     # board came back with expected version
                     this_reboot_time = time.time() - reboot_start_time
                     LOGGER.info(
-                        '%s back up, in %.1f seconds (%.1f + %.1f) with FW ver '
-                        '%s' % (fpga.host, upload_time + this_reboot_time,
-                                upload_time, this_reboot_time,
-                                firmware_version))
+                        "%s back up, in %.1f seconds (%.1f + %.1f) with FW ver "
+                        "%s"
+                        % (
+                            fpga.host,
+                            upload_time + this_reboot_time,
+                            upload_time,
+                            this_reboot_time,
+                            firmware_version,
+                        )
+                    )
                     results[fpga.host] = (
-                        upload_time, this_reboot_time,
-                        IpAddress(socket.gethostbyname(fpga.host))
+                        upload_time,
+                        this_reboot_time,
+                        IpAddress(socket.gethostbyname(fpga.host)),
                     )
                     to_remove.append(fpga)
-                elif not result and firmware_version == '0.0':
+                elif not result and firmware_version == "0.0":
                     # board unreachable when trying to read firmware version
                     # continue, leaving the board in the missing list giving it another chance later
                     pass
                 else:
                     # board came with with unexpected firmware version
-                    print(fpga.host, 'came back with ERROR')
+                    print(fpga.host, "came back with ERROR")
                     to_remove.append(fpga)
                     fpga_error.append(fpga)
             else:
-                status_str += ' not yet ready'
+                status_str += " not yet ready"
             # print(status_str)
             # sys.stdout.flush()
         for remove in to_remove:
@@ -622,9 +641,11 @@ def wait_after_reboot(fpgas, timeout=200, upload_time=-1):
         error_str = str([f.host for f in fpga_error])
         error_str += str([f.host for f in missing])
         # print('ERROR', error_str)
-        raise sd.SkarabProgrammingError('These FPGAs never came up correctly '
-                                        'after programming: '
-                                        '%s' % str(error_str))
+        raise sd.SkarabProgrammingError(
+            "These FPGAs never came up correctly "
+            "after programming: "
+            "%s" % str(error_str)
+        )
     reboot_time = time.time() - reboot_start_time
     min_time = 1000
     max_time = -1
@@ -685,6 +706,7 @@ def wait_after_reboot(fpgas, timeout=200, upload_time=-1):
 def reboot_skarabs_from_sdram(fpgas):
     def fpga_reboot(fpga):
         fpga.transport.boot_from_sdram()
+
     # sometimes, the reboot response gets lost.
     # can't re-request, cos by then uB has rebooted.
     # application must check to see that correct image booted.
@@ -697,9 +719,11 @@ def reboot_skarabs_from_sdram(fpgas):
 def clear_skarabs_sdram(fpgas):
     def clear_sdram(fpga):
         fpga.transport.clear_sdram()
+
     try:
         thop(fpgas, 5, clear_sdram)
     except RuntimeError:
         pass
+
 
 # end

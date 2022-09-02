@@ -7,6 +7,7 @@ class AttributeContainer(object):
     """
     An iterable class to make registers, snapshots, etc more accessible.
     """
+
     def __init__(self):
         self._items = None
         self.clear()
@@ -33,24 +34,28 @@ class AttributeContainer(object):
         :param value:
         :return:
         """
-        if not hasattr(self, '_items') and (name != '_items'):
-            raise ValueError('Cannot add attribute %s until _item has '
-                             'been created.' % name)
-        if name == '_items':
+        if not hasattr(self, "_items") and (name != "_items"):
+            raise ValueError(
+                "Cannot add attribute %s until _item has " "been created." % name
+            )
+        if name == "_items":
             super(AttributeContainer, self).__setattr__(name, value)
             return
         # special case for items that have a write_single method. so ugly. :/
         # this enables a shortcut to write single-value registers
         if name in self._items:
             attr = getattr(self, name)
-            if hasattr(attr, 'write_single'):
-                getattr(attr, 'write_single')(value)
-                LOGGER.debug('To reassign this attribute, you\'re going to '
-                             'need to call remove_attribute first.')
+            if hasattr(attr, "write_single"):
+                getattr(attr, "write_single")(value)
+                LOGGER.debug(
+                    "To reassign this attribute, you're going to "
+                    "need to call remove_attribute first."
+                )
                 return
             # you need to remove an attribute first to reassign it
-            raise AttributeError('Cannot reassign an attribute without'
-                                 'calling remove_attribute first.')
+            raise AttributeError(
+                "Cannot reassign an attribute without" "calling remove_attribute first."
+            )
         # add it to the _items list and to our __dict__
         self._items.append(name)
         super(AttributeContainer, self).__setattr__(name, value)
@@ -85,5 +90,5 @@ class AttributeContainer(object):
 
     def __repr__(self):
         keys = list(self.__dict__.keys())
-        keys.pop(keys.index('_items'))
+        keys.pop(keys.index("_items"))
         return str(keys)

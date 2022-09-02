@@ -12,15 +12,22 @@ class Mac(object):
         """
         Convert a MAC in integer form to a human-readable string.
         """
-        mac_pieces = [(mac & ((1 << 48) - (1 << 40))) >> 40,
-                      (mac & ((1 << 40) - (1 << 32))) >> 32,
-                      (mac & ((1 << 32) - (1 << 24))) >> 24,
-                      (mac & ((1 << 24) - (1 << 16))) >> 16,
-                      (mac & ((1 << 16) - (1 << 8))) >> 8,
-                      (mac & ((1 << 8) - (1 << 0))) >> 0]
-        return '%02X:%02X:%02X:%02X:%02X:%02X' % (mac_pieces[0], mac_pieces[1],
-                                                  mac_pieces[2], mac_pieces[3],
-                                                  mac_pieces[4], mac_pieces[5])
+        mac_pieces = [
+            (mac & ((1 << 48) - (1 << 40))) >> 40,
+            (mac & ((1 << 40) - (1 << 32))) >> 32,
+            (mac & ((1 << 32) - (1 << 24))) >> 24,
+            (mac & ((1 << 24) - (1 << 16))) >> 16,
+            (mac & ((1 << 16) - (1 << 8))) >> 8,
+            (mac & ((1 << 8) - (1 << 0))) >> 0,
+        ]
+        return "%02X:%02X:%02X:%02X:%02X:%02X" % (
+            mac_pieces[0],
+            mac_pieces[1],
+            mac_pieces[2],
+            mac_pieces[3],
+            mac_pieces[4],
+            mac_pieces[5],
+        )
 
     @staticmethod
     def str2mac(mac_str):
@@ -28,11 +35,13 @@ class Mac(object):
         Convert a human-readable MAC string to an integer.
         """
         mac = 0
-        if mac_str.count(':') != 5:
-            raise RuntimeError('A MAC address must be of the'
-                               ' form xx:xx:xx:xx:xx:xx, got %s' % mac_str)
+        if mac_str.count(":") != 5:
+            raise RuntimeError(
+                "A MAC address must be of the"
+                " form xx:xx:xx:xx:xx:xx, got %s" % mac_str
+            )
         offset = 40
-        for byte_str in mac_str.split(':'):
+        for byte_str in mac_str.split(":"):
             value = int(byte_str, base=16)
             mac += value << offset
             offset -= 8
@@ -48,11 +57,11 @@ class Mac(object):
         elif isinstance(mac, int):
             mac_int = mac
         if mac_str is not None:
-            if mac_str.find(':') == -1:
+            if mac_str.find(":") == -1:
                 mac_int = int(mac_str)
                 mac_str = None
         if (mac_str is None) and (mac_int is None):
-            raise ValueError('Cannot make a MAC with no value.')
+            raise ValueError("Cannot make a MAC with no value.")
         elif mac_str is not None:
             self.mac_int = self.str2mac(mac_str)
             self.mac_str = self.mac2str(self.mac_int)
@@ -66,23 +75,29 @@ class Mac(object):
         Make a MAC address object from a ROACH hostname
         """
         # HACK
-        if hostname.startswith('cbf_oach') or hostname.startswith('dsim'):
-            hostname = hostname.replace('cbf_oach', 'roach')
-            hostname = hostname.replace('dsim', 'roach')
+        if hostname.startswith("cbf_oach") or hostname.startswith("dsim"):
+            hostname = hostname.replace("cbf_oach", "roach")
+            hostname = hostname.replace("dsim", "roach")
         # /HACK
-        if not (hostname.startswith('roach') or hostname.startswith('skarab')):
-            raise RuntimeError('Only hostnames beginning with '
-                               'roach or skarab supported: %s' % hostname)
-        if hostname.startswith('roach'):
-            digits = hostname.replace('roach', '')
+        if not (hostname.startswith("roach") or hostname.startswith("skarab")):
+            raise RuntimeError(
+                "Only hostnames beginning with "
+                "roach or skarab supported: %s" % hostname
+            )
+        if hostname.startswith("roach"):
+            digits = hostname.replace("roach", "")
         else:
-            digits = hostname.replace('skarab', '')
-            for intsuffix in ['-01', '-02']:
+            digits = hostname.replace("skarab", "")
+            for intsuffix in ["-01", "-02"]:
                 if digits.endswith(intsuffix):
-                    digits = digits.replace(intsuffix, '')
-        serial = [int(digits[ctr:ctr+2], 16) for ctr in range(0, 6, 2)]
-        mac_str = 'fe:00:%02x:%02x:%02x:%02x' % (serial[0], serial[1],
-                                                 serial[2], port_num)
+                    digits = digits.replace(intsuffix, "")
+        serial = [int(digits[ctr : ctr + 2], 16) for ctr in range(0, 6, 2)]
+        mac_str = "fe:00:%02x:%02x:%02x:%02x" % (
+            serial[0],
+            serial[1],
+            serial[2],
+            port_num,
+        )
         return cls(mac_str)
 
     @classmethod
@@ -91,9 +106,9 @@ class Mac(object):
 
     def packed(self):
         mac = [0, 0]
-        for byte in self.mac_str.split(':'):
+        for byte in self.mac_str.split(":"):
             mac.extend([int(byte, base=16)])
-        return struct.pack('>8B', *mac)
+        return struct.pack(">8B", *mac)
 
     def __int__(self):
         return self.mac_int
@@ -102,7 +117,7 @@ class Mac(object):
         return self.mac_str
 
     def __repr__(self):
-        return 'Mac(%s)' % self.__str__()
+        return "Mac(%s)" % self.__str__()
 
     def __eq__(self, other):
         if isinstance(other, Mac):
@@ -111,24 +126,26 @@ class Mac(object):
             return int(self) == self.str2mac(other)
         elif isinstance(other, int):
             return int(self) == other
-        raise TypeError('Don\'t know what to do with other: %s' % other)
+        raise TypeError("Don't know what to do with other: %s" % other)
 
 
 class IpAddress(object):
     """
     An IP address.
     """
+
     @staticmethod
     def ip2str(ip_addr):
         """
         Convert an IP in integer form to a human-readable string.
         """
-        ip_pieces = [ip_addr / (2 ** 24),
-                     ip_addr % (2 ** 24) / (2 ** 16),
-                     ip_addr % (2 ** 16) / (2 ** 8),
-                     ip_addr % (2 ** 8)]
-        return '%i.%i.%i.%i' % (ip_pieces[0], ip_pieces[1],
-                                ip_pieces[2], ip_pieces[3])
+        ip_pieces = [
+            ip_addr / (2**24),
+            ip_addr % (2**24) / (2**16),
+            ip_addr % (2**16) / (2**8),
+            ip_addr % (2**8),
+        ]
+        return "%i.%i.%i.%i" % (ip_pieces[0], ip_pieces[1], ip_pieces[2], ip_pieces[3])
 
     @staticmethod
     def str2ip(ip_str):
@@ -136,11 +153,10 @@ class IpAddress(object):
         Convert a human-readable IP string to an integer.
         """
         ip_addr = 0
-        if ip_str.count('.') != 3:
-            raise RuntimeError('An IP address must be of '
-                               'the form xxx.xxx.xxx.xxx')
+        if ip_str.count(".") != 3:
+            raise RuntimeError("An IP address must be of " "the form xxx.xxx.xxx.xxx")
         offset = 24
-        for octet in ip_str.split('.'):
+        for octet in ip_str.split("."):
             value = int(octet)
             ip_addr += value << offset
             offset -= 8
@@ -162,7 +178,7 @@ class IpAddress(object):
                 ip_int = int(ip_str)
                 ip_str = None
         if (ip_str is None) and (ip_int is None):
-            raise ValueError('Cannot make an IP with no value.')
+            raise ValueError("Cannot make an IP with no value.")
         elif ip_str is not None:
             self.ip_int = self.str2ip(ip_str)
             self.ip_str = ip_str
@@ -172,9 +188,9 @@ class IpAddress(object):
 
     def packed(self):
         ip = []
-        for byte in self.ip_str.split('.'):
+        for byte in self.ip_str.split("."):
             ip.extend([int(byte, base=10)])
-        return struct.pack('>4B', *ip)
+        return struct.pack(">4B", *ip)
 
     def is_multicast(self):
         """
@@ -189,7 +205,7 @@ class IpAddress(object):
         return self.ip_str
 
     def __repr__(self):
-        return 'IpAddress(%s)' % self.__str__()
+        return "IpAddress(%s)" % self.__str__()
 
     def __gt__(self, other):
         return int(self) > int(other)
@@ -207,4 +223,4 @@ class IpAddress(object):
             return int(self) == self.str2ip(other)
         elif isinstance(other, int):
             return int(self) == other
-        raise TypeError('Don\'t know what to do with other: %s' % other)
+        raise TypeError("Don't know what to do with other: %s" % other)

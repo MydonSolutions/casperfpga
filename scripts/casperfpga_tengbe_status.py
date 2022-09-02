@@ -20,67 +20,93 @@ except ImportError:
     os = None
 
 parser = argparse.ArgumentParser(
-    description='Display TenGBE interface information about a MeerKAT '
-                'fpga host.',
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    description="Display TenGBE interface information about a MeerKAT " "fpga host.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
 parser.add_argument(
-    '--hosts', dest='hosts', type=str, action='store', default='',
-    help='comma-delimited list of hosts, or a corr2 config file')
+    "--hosts",
+    dest="hosts",
+    type=str,
+    action="store",
+    default="",
+    help="comma-delimited list of hosts, or a corr2 config file",
+)
 parser.add_argument(
-    '-p', '--polltime', dest='polltime', action='store', default=1, type=int,
-    help='time at which to poll data, in seconds')
+    "-p",
+    "--polltime",
+    dest="polltime",
+    action="store",
+    default=1,
+    type=int,
+    help="time at which to poll data, in seconds",
+)
 parser.add_argument(
-    '-r', '--reset', dest='resetctrs', action='store_true', default=False,
-    help='reset the GBE debug counters')
+    "-r",
+    "--reset",
+    dest="resetctrs",
+    action="store_true",
+    default=False,
+    help="reset the GBE debug counters",
+)
 parser.add_argument(
-    '--loglevel', dest='log_level', action='store', default='',
-    help='log level to use, default None, options INFO, DEBUG, ERROR')
+    "--loglevel",
+    dest="log_level",
+    action="store",
+    default="",
+    help="log level to use, default None, options INFO, DEBUG, ERROR",
+)
 args = parser.parse_args()
 polltime = args.polltime
 
-if args.log_level != '':
+if args.log_level != "":
     import logging
+
     log_level = args.log_level.strip()
     try:
-        logging.basicConfig(level=eval('logging.%s' % log_level))
+        logging.basicConfig(level=eval("logging.%s" % log_level))
     except AttributeError:
-        raise RuntimeError('No such log level: %s' % log_level)
+        raise RuntimeError("No such log level: %s" % log_level)
 # import logging
 # logging.basicConfig(filename='/tmp/casperfpga_tengbe_status_curses.log',
 #                     level=logging.DEBUG)
 # logging.info('****************************************************')
 
 # create the devices and connect to them
-if args.hosts.strip() == '':
-    if corr2 is None or 'CORR2INI' not in list(os.environ.keys()):
-        raise RuntimeError('No hosts given and no corr2 config found. '
-                           'No hosts.')
+if args.hosts.strip() == "":
+    if corr2 is None or "CORR2INI" not in list(os.environ.keys()):
+        raise RuntimeError("No hosts given and no corr2 config found. " "No hosts.")
     fpgas = corr2.utils.script_get_fpgas(args)
 else:
-    hosts = args.hosts.strip().replace(' ', '').split(',')
+    hosts = args.hosts.strip().replace(" ", "").split(",")
     if len(hosts) == 0:
-        raise RuntimeError('No good carrying on without hosts.')
+        raise RuntimeError("No good carrying on without hosts.")
     fpgas = utils.threaded_create_fpgas_from_hosts(hosts)
-    utils.threaded_fpga_function(fpgas, 15, ('get_system_information', [], {}))
+    utils.threaded_fpga_function(fpgas, 15, ("get_system_information", [], {}))
 
 for fpga in fpgas:
     numgbes = len(fpga.gbes)
     if numgbes < 1:
-        raise RuntimeWarning('Host %s has no gbe cores', fpga.host)
-    print(('%s: found %i gbe core%s: %s' % (
-        fpga.host, numgbes, '' if numgbes == 1 else 's', list(fpga.gbes.keys()))))
+        raise RuntimeWarning("Host %s has no gbe cores", fpga.host)
+    print(
+        (
+            "%s: found %i gbe core%s: %s"
+            % (fpga.host, numgbes, "" if numgbes == 1 else "s", list(fpga.gbes.keys()))
+        )
+    )
 
 if args.resetctrs:
+
     def reset_gbe_debug(fpga_):
         control_fields = fpga_.registers.control.field_names()
-        if 'gbe_debug_rst' in control_fields:
-            fpga_.registers.control.write(gbe_debug_rst='pulse')
-        elif 'gbe_cnt_rst' in control_fields:
-            fpga_.registers.control.write(gbe_cnt_rst='pulse')
+        if "gbe_debug_rst" in control_fields:
+            fpga_.registers.control.write(gbe_debug_rst="pulse")
+        elif "gbe_cnt_rst" in control_fields:
+            fpga_.registers.control.write(gbe_cnt_rst="pulse")
         else:
-            utils.threaded_fpga_function(fpgas, 10, 'disconnect')
+            utils.threaded_fpga_function(fpgas, 10, "disconnect")
             print(control_fields)
-            raise RuntimeError('Could not find GBE debug reset field.')
+            raise RuntimeError("Could not find GBE debug reset field.")
+
     utils.threaded_fpga_operation(fpgas, 10, reset_gbe_debug)
 
 
@@ -94,9 +120,10 @@ def get_gbe_data(fpga):
         for regname in ctr_data:
             regdata = ctr_data[regname]
             try:
-                if ('timestamp' in list(regdata.keys())) and \
-                        ('data' in list(regdata.keys())):
-                    ctr_data[regname] = regdata['data']['reg']
+                if ("timestamp" in list(regdata.keys())) and (
+                    "data" in list(regdata.keys())
+                ):
+                    ctr_data[regname] = regdata["data"]["reg"]
             except AttributeError:
                 pass
         returndata[gbecore.name] = ctr_data
@@ -109,11 +136,12 @@ def get_tap_data(fpga):
     """
     data = {}
     for gbecore in fpga.gbes.names():
-        if hasattr(fpga.gbes[gbecore], 'tap_info'):
+        if hasattr(fpga.gbes[gbecore], "tap_info"):
             data[gbecore] = fpga.gbes[gbecore].tap_info()
         else:
             data[gbecore] = None
     return data
+
 
 # get gbe and tap data
 tap_data = utils.threaded_fpga_operation(fpgas, 15, get_tap_data)
@@ -140,17 +168,29 @@ tap_data = utils.threaded_fpga_operation(fpgas, 15, get_tap_data)
 # utils.threaded_fpga_function(fpgas, 10, 'disconnect')
 # sys.exit()
 
-fpga_headers = ['tap_running', 'ip', 'gbe_rxctr', 'gbe_rxofctr',
-                'gbe_rxerrctr', 'gbe_rxbadctr', 'gbe_txerrctr',
-                'gbe_txfullctr', 'gbe_txofctr', 'gbe_txctr', 'gbe_txvldctr']
+fpga_headers = [
+    "tap_running",
+    "ip",
+    "gbe_rxctr",
+    "gbe_rxofctr",
+    "gbe_rxerrctr",
+    "gbe_rxbadctr",
+    "gbe_txerrctr",
+    "gbe_txfullctr",
+    "gbe_txofctr",
+    "gbe_txctr",
+    "gbe_txvldctr",
+]
 
 
 def exit_gracefully(sig, frame):
     print(sig)
     print(frame)
     scroll.screen_teardown()
-    utils.threaded_fpga_function(fpgas, 10, 'disconnect')
+    utils.threaded_fpga_function(fpgas, 10, "disconnect")
     sys.exit(0)
+
+
 signal.signal(signal.SIGINT, exit_gracefully)
 signal.signal(signal.SIGHUP, exit_gracefully)
 
@@ -194,11 +234,17 @@ try:
         if time.time() > last_refresh + polltime:
             scroller.clear_buffer()
             line = scroller.add_string(
-                'Polling %i host%s every %s - %is elapsed.' % (
+                "Polling %i host%s every %s - %is elapsed."
+                % (
                     len(fpgas),
-                    '' if len(fpgas) == 1 else 's',
-                    'second' if polltime == 1 else ('%i seconds' % polltime),
-                    time.time() - STARTTIME), 0, 0, fixed=True)
+                    "" if len(fpgas) == 1 else "s",
+                    "second" if polltime == 1 else ("%i seconds" % polltime),
+                    time.time() - STARTTIME,
+                ),
+                0,
+                0,
+                fixed=True,
+            )
             start_pos = max_1st_col_offset
             pos_increment = max_fldname + 2
 
@@ -211,32 +257,31 @@ try:
                 fpga_data = gbe_data[fpga.host]
                 line = scroller.add_string(fpga.host)
                 for reg in fpga_headers:
-                    fld = '{val:>{width}}'.format(val=reg, width=max_fldname)
+                    fld = "{val:>{width}}".format(val=reg, width=max_fldname)
                     line = scroller.add_string(fld, start_pos)
                     start_pos += pos_increment
-                scroller.add_string('', cr=True)
+                scroller.add_string("", cr=True)
                 for core, core_data in list(fpga_data.items()):
                     if tap_data[fpga.host][core] is not None:
-                        tap_running = tap_data[fpga.host][core]['name'] == ''
-                        fpga_data[core]['ip'] = tap_data[fpga.host][core]['ip']
+                        tap_running = tap_data[fpga.host][core]["name"] == ""
+                        fpga_data[core]["ip"] = tap_data[fpga.host][core]["ip"]
                     else:
                         tap_running = False
-                        fpga_data[core]['ip'] = 'n/a'
-                    fpga_data[core]['tap_running'] = not tap_running
+                        fpga_data[core]["ip"] = "n/a"
+                    fpga_data[core]["tap_running"] = not tap_running
                     start_pos = max_1st_col_offset
                     line = scroller.add_string(core)
                     for header_register in fpga_headers:
-                        core_regname = header_register.replace('gbe', core)
+                        core_regname = header_register.replace("gbe", core)
                         if core_regname in list(core_data.keys()):
-                            fld = '{val:>{width}}'.format(
-                                    val=core_data[core_regname],
-                                    width=max_fldname)
+                            fld = "{val:>{width}}".format(
+                                val=core_data[core_regname], width=max_fldname
+                            )
                         else:
-                            fld = '{val:>{width}}'.format(
-                                val='n/a', width=max_fldname)
+                            fld = "{val:>{width}}".format(val="n/a", width=max_fldname)
                         scroller.add_string(fld, start_pos)
                         start_pos += pos_increment
-                    scroller.add_string('', cr=True)
+                    scroller.add_string("", cr=True)
             scroller.draw_screen()
             last_refresh = time.time()
         else:

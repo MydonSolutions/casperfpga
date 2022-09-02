@@ -11,23 +11,26 @@ def clean_fields(parent_name, parent_type, field_str):
     :param parent_type: register, snapshot, etc
     :param field_str: the string to be parsed
     """
-    _fstr = field_str.replace('[', '').replace(']', '')
-    _fstr = _fstr.strip().replace(', ', ',')
-    while _fstr.find('  ') > -1:
-        _fstr = _fstr.replace('  ', ' ')
-    if (_fstr.find(' ') > -1) and (_fstr.find(',') > -1):
-        LOGGER.error('Parameter string %s contains spaces and commas '
-                     'as delimiters. This is confusing.' % field_str)
-        _fstr = _fstr.replace(',', ' ')
-    if _fstr.find(' ') > -1:
-        _flist = _fstr.split(' ')
+    _fstr = field_str.replace("[", "").replace("]", "")
+    _fstr = _fstr.strip().replace(", ", ",")
+    while _fstr.find("  ") > -1:
+        _fstr = _fstr.replace("  ", " ")
+    if (_fstr.find(" ") > -1) and (_fstr.find(",") > -1):
+        LOGGER.error(
+            "Parameter string %s contains spaces and commas "
+            "as delimiters. This is confusing." % field_str
+        )
+        _fstr = _fstr.replace(",", " ")
+    if _fstr.find(" ") > -1:
+        _flist = _fstr.split(" ")
     else:
-        _flist = _fstr.split(',')
+        _flist = _fstr.split(",")
     _rv = []
     for _fname in _flist:
-        if _fname.strip() == '':
-            LOGGER.debug('Throwing away empty field in %s %s' % (
-                parent_type, parent_name))
+        if _fname.strip() == "":
+            LOGGER.debug(
+                "Throwing away empty field in %s %s" % (parent_type, parent_name)
+            )
         else:
             _rv.append(_fname)
     return _rv
@@ -37,6 +40,7 @@ class Bitfield(object):
     """
     Describes a chunk of memory that consists of a number of Fields.
     """
+
     def __init__(self, name, width_bits, fields=None):
         """
 
@@ -52,8 +56,7 @@ class Bitfield(object):
         self._fields = {}
         if fields is not None:
             self.fields_add(fields)
-        LOGGER.debug('New Bitfield(%s) with %i fields' % (self.name,
-                                                          len(self._fields)))
+        LOGGER.debug("New Bitfield(%s) with %i fields" % (self.name, len(self._fields)))
 
     # def __dir__(self):
     #     return self._fields.keys()
@@ -69,9 +72,9 @@ class Bitfield(object):
         Add a dictionary of Fields to this bitfield.
         """
         if not isinstance(fields, dict):
-            raise TypeError('fields should be a dictionary of Field objects.')
+            raise TypeError("fields should be a dictionary of Field objects.")
         if len(fields) == 0:
-            raise ValueError('Empty dictionary is not so useful?')
+            raise ValueError("Empty dictionary is not so useful?")
         for newfield in fields.values():
             self.field_add(newfield)
 
@@ -80,7 +83,7 @@ class Bitfield(object):
         Add a Field to this bitfield.
         """
         if not isinstance(newfield, Field):
-            raise TypeError('Expecting Field object.')
+            raise TypeError("Expecting Field object.")
         # add it at the end of the current fields
         if auto_offset:
             width = 0
@@ -108,9 +111,9 @@ class Bitfield(object):
         """
         Get a string of all the field names.
         """
-        field_string = ''
+        field_string = ""
         for field in self._fields.values():
-            field_string += '%s, ' % field
+            field_string += "%s, " % field
         field_string = field_string[0:-2]
         return field_string
 
@@ -118,8 +121,8 @@ class Bitfield(object):
         """
         Return a string representation of this object.
         """
-        rv = self.name + '(' + str(self.width_bits) + ',['
-        rv = rv + self.fields_string_get() + '])'
+        rv = self.name + "(" + str(self.width_bits) + ",["
+        rv = rv + self.fields_string_get() + "])"
         return rv
 
 
@@ -127,6 +130,7 @@ class Field(object):
     """
     A Field object is a number of bits somewhere in a Bitfield object.
     """
+
     def __init__(self, name, numtype, width_bits, binary_pt, lsb_offset):
         """
         Initialise a Field object.
@@ -140,12 +144,12 @@ class Field(object):
         :param width_bits: The width of the field, in bits
         :param binary_pt: The binary point position, in bits
         :param lsb_offset: The offset in the memory field, in bits:
-        
+
                            * 1 means it hasn't been set yet.
         """
         if not isinstance(numtype, int):
-            raise TypeError('Type must be an integer.')
-        assert name.strip() != '', 'Cannot have a Field with empty name?!'
+            raise TypeError("Type must be an integer.")
+        assert name.strip() != "", "Cannot have a Field with empty name?!"
         self.name = name
         self.numtype = numtype
         self.width_bits = width_bits
@@ -153,9 +157,12 @@ class Field(object):
         self.offset = lsb_offset
 
     def __str__(self):
-        return '{}({}, {}, {}, {})'.format(self.name, self.offset, self.width_bits,
-                                           self.binary_pt, self.numtype)
+        return "{}({}, {}, {}, {})".format(
+            self.name, self.offset, self.width_bits, self.binary_pt, self.numtype
+        )
 
     def __repr__(self):
         return str(self)
+
+
 # end

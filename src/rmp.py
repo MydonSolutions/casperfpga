@@ -10,7 +10,7 @@ import array
 from struct import *
 
 
-class rmpNetwork():
+class rmpNetwork:
     def __init__(self, this_ip, fpga_ip, udp_port, timeout):
         """!@brief Initialize the network
 
@@ -23,7 +23,7 @@ class rmpNetwork():
 
         Returns -- int -- socket handle
         """
-        self.sock = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)  # Internet # UDP
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # Internet # UDP
 
         self.sock.settimeout(1)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024)
@@ -42,14 +42,13 @@ class rmpNetwork():
         socket_closer("class rmpNetwork __del__", self.sock)
 
     def CloseNetwork(self):
-        """!@brief Close previously opened socket.
-        """
+        """!@brief Close previously opened socket."""
         socket_closer("class rmpNetwork CloseNetwork", self.sock)
         return
 
     def recvfrom_to(self, buff):
         attempt = 0
-        while (attempt < self.timeout or self.timeout == 0):
+        while attempt < self.timeout or self.timeout == 0:
             try:
                 return self.sock.recvfrom(10240)
             except:
@@ -68,7 +67,7 @@ class rmpNetwork():
         self.psn += 1
         exp_psn = self.psn
 
-        num_pkt = len(dat)/256
+        num_pkt = len(dat) / 256
         num_wr = num_pkt
         num_ack = 0
         idx = 0
@@ -91,14 +90,16 @@ class rmpNetwork():
 
         if num_wr > 0:
             print("sending 1")
-            pkt = array.array('I')
+            pkt = array.array("I")
             pkt.append(self.psn)  # psn
             pkt.append(2)  # opcode
             pkt.append(256)  # noo
             pkt.append(add)  # sa
-            for d in dat[256*idx:256*(idx+1)]:  # dat
+            for d in dat[256 * idx : 256 * (idx + 1)]:  # dat
                 pkt.append(d)
-            self.sock.sendto(bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port))
+            self.sock.sendto(
+                bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port)
+            )
 
             num_wr -= 1
             idx += 1
@@ -106,32 +107,34 @@ class rmpNetwork():
 
         while num_ack != num_pkt:
             if num_wr > 0:
-                pkt = array.array('I')
+                pkt = array.array("I")
                 pkt.append(self.psn)  # psn
                 pkt.append(2)  # opcode
                 pkt.append(256)  # noo
                 pkt.append(add)  # sa
-                for d in dat[256*idx:256*(idx+1)]:  # dat
+                for d in dat[256 * idx : 256 * (idx + 1)]:  # dat
                     pkt.append(d)
-                self.sock.sendto(bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port))
+                self.sock.sendto(
+                    bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port)
+                )
                 num_wr -= 1
                 idx += 1
                 self.psn += 1
 
             data, addr = self.recvfrom_to(10240)
             data = bytes(data)
-            psn = unpack('I', data[0:4])[0]
-            add = unpack('I', data[4:8])[0]
+            psn = unpack("I", data[0:4])[0]
+            add = unpack("I", data[4:8])[0]
             if psn != exp_psn or add != add:
-               print("Bulk write PSN error!")
-               return
+                print("Bulk write PSN error!")
+                return
             num_ack += 1
             exp_psn += 1
 
-        if dat[(len(dat)/256)*256:] != []:
-            self.wr32(add, dat[(len(dat)/256)*256:])
+        if dat[(len(dat) / 256) * 256 :] != []:
+            self.wr32(add, dat[(len(dat) / 256) * 256 :])
 
-    def wr32(self, add, dat, infinite_loop = False):
+    def wr32(self, add, dat, infinite_loop=False):
         """!@brief Write remote register at address add with dat.
 
         It transmits a write request to the remote device.
@@ -145,7 +148,7 @@ class rmpNetwork():
 
                 self.psn += 1
 
-                pkt = array.array('I')
+                pkt = array.array("I")
                 pkt.append(self.psn)  # psn
                 pkt.append(2)  # opcode
                 if type(dat) == list:
@@ -159,15 +162,19 @@ class rmpNetwork():
                 else:
                     pkt.append(dat)  # dat
 
-                self.sock.sendto(bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port))
+                self.sock.sendto(
+                    bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port)
+                )
                 while infinite_loop:
-                    self.sock.sendto(bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port))
+                    self.sock.sendto(
+                        bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port)
+                    )
                 data, addr = self.recvfrom_to(10240)
 
                 data = bytes(data)
 
-                psn = unpack('I', data[0:4])[0]
-                add = unpack('I', data[4:8])[0]
+                psn = unpack("I", data[0:4])[0]
+                add = unpack("I", data[4:8])[0]
 
                 if psn == self.psn and add == req_add:
                     return
@@ -188,16 +195,15 @@ class rmpNetwork():
                 if self.reliable == 1:
                     print()
                     print("Failed UCP write:")
-                    #print "Received: " + str(psn)
-                    #print "Expected: " + str(self.psn)
+                    # print "Received: " + str(psn)
+                    # print "Expected: " + str(self.psn)
                     print("Requested Add: " + hex(req_add))
-                    #print "Received Add: " + hex(add)
+                    # print "Received Add: " + hex(add)
                     print("Retrying...")
                     pass
                 else:
                     print("Failed UCP write. Exiting ...")
                     sys.exit(-1)
-
 
             print("Getting Last Executed PSN...")
             last_psn = self.rd32(0x30000004)
@@ -212,7 +218,6 @@ class rmpNetwork():
         print("Requested Add: " + hex(req_add))
         print("Received Add: " + hex(add))
         exit(-1)
-
 
     def rd32(self, add, n=1):
         """!@brief Read remote register at address add.
@@ -232,23 +237,25 @@ class rmpNetwork():
             self.psn += 1
 
             try:
-                pkt = array.array('I')
-                pkt.append(self.psn)    # psn
-                pkt.append(1)           # opcode
-                pkt.append(n)           # noo
-                pkt.append(req_add)     # sa
+                pkt = array.array("I")
+                pkt.append(self.psn)  # psn
+                pkt.append(1)  # opcode
+                pkt.append(n)  # noo
+                pkt.append(req_add)  # sa
 
-                self.sock.sendto(bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port))
+                self.sock.sendto(
+                    bytes(pkt.tostring()), (self.fpga_ip, self.remote_udp_port)
+                )
 
                 data, addr = self.recvfrom_to(10240)
 
                 data = bytes(data)
 
-                psn = unpack('I', data[0:4])[0]
-                add = unpack('I', data[4:8])[0]
+                psn = unpack("I", data[0:4])[0]
+                add = unpack("I", data[4:8])[0]
 
                 if psn == self.psn and add == req_add:
-                    dat = unpack('I' * n, data[8:])
+                    dat = unpack("I" * n, data[8:])
                     dat_list = []
                     for k in range(n):
                         dat_list.append(dat[k])
@@ -276,7 +283,7 @@ class rmpNetwork():
         print()
         print("UCP read error")
         print("Requested Add: " + hex(req_add))
-        #print "Received Add: " + hex(add)
+        # print "Received Add: " + hex(add)
         exit(-1)
 
     def socket_flush(self):

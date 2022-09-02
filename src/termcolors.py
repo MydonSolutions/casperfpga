@@ -3,15 +3,21 @@ termcolors.py
 -- Taken from corr
 """
 
-color_names = ('black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white')
-foreground = dict([(color_names[x], '3%s' % x) for x in range(8)])
-background = dict([(color_names[x], '4%s' % x) for x in range(8)])
+color_names = ("black", "red", "green", "yellow", "blue", "magenta", "cyan", "white")
+foreground = dict([(color_names[x], "3%s" % x) for x in range(8)])
+background = dict([(color_names[x], "4%s" % x) for x in range(8)])
 
-RESET = '0'
-opt_dict = {'bold': '1', 'underscore': '4', 'blink': '5', 'reverse': '7', 'conceal': '8'}
+RESET = "0"
+opt_dict = {
+    "bold": "1",
+    "underscore": "4",
+    "blink": "5",
+    "reverse": "7",
+    "conceal": "8",
+}
 
 
-def colorize(text='', opts=(), **kwargs):
+def colorize(text="", opts=(), **kwargs):
     """
     Returns your text, enclosed in ANSI graphics codes.
 
@@ -34,7 +40,7 @@ def colorize(text='', opts=(), **kwargs):
     Examples:
 
     .. code-block:: python
-    
+
         colorize('hello', fg='red', bg='blue', opts=('blink',))
         colorize()
         colorize('goodbye', opts=('underscore',))
@@ -44,16 +50,16 @@ def colorize(text='', opts=(), **kwargs):
         print 'this should not be red'
     """
     code_list = []
-    if text == '' and len(opts) == 1 and opts[0] == 'reset':
-        return '\x1b[%sm' % RESET
+    if text == "" and len(opts) == 1 and opts[0] == "reset":
+        return "\x1b[%sm" % RESET
     for k, v in kwargs.items():
-        if k == 'fg':
+        if k == "fg":
             code_list.append(foreground[v])
-        elif k == 'bg':
+        elif k == "bg":
             code_list.append(background[v])
     for o in opts:
         if o in opt_dict:
             code_list.append(opt_dict[o])
-    if 'noreset' not in opts:
-        text = text + '\x1b[%sm' % RESET
-    return ('\x1b[%sm' % ';'.join(code_list)) + text
+    if "noreset" not in opts:
+        text = text + "\x1b[%sm" % RESET
+    return ("\x1b[%sm" % ";".join(code_list)) + text

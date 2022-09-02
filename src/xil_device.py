@@ -18,9 +18,11 @@ class Xil_Device(Memory):
         self.parent = parent
         self.process_device_info(device_info)
         Memory.__init__(self, name, 32, address, length_bytes)
-    
+
     @classmethod
-    def from_device_info(cls, parent, device_name, device_info, memorymap_dict, **kwargs):
+    def from_device_info(
+        cls, parent, device_name, device_info, memorymap_dict, **kwargs
+    ):
         """
         Process device info and the memory map to get all necessary info
         and return a Gbe instance.
@@ -34,26 +36,24 @@ class Xil_Device(Memory):
         address, length_bytes = -1, -1
         for mem_name in list(memorymap_dict.keys()):
             if mem_name == device_name:
-                address = memorymap_dict[mem_name]['address']
-                length_bytes = memorymap_dict[mem_name]['bytes']
+                address = memorymap_dict[mem_name]["address"]
+                length_bytes = memorymap_dict[mem_name]["bytes"]
                 break
         if address == -1 or length_bytes == -1:
-            raise RuntimeError('Could not find address or length '
-                               'for Xil device %s' % device_name)
+            raise RuntimeError(
+                "Could not find address or length " "for Xil device %s" % device_name
+            )
         return cls(parent, device_name, address, length_bytes, device_info)
 
     def process_device_info(self, device_info):
 
         if device_info is None:
             return
-        self.device_type = device_info['devtype']
+        self.device_type = device_info["devtype"]
 
-    def read_int(self,word_offset):
-        data = self.parent.read_int(self.name,word_offset)
+    def read_int(self, word_offset):
+        data = self.parent.read_int(self.name, word_offset)
         print((hex(data)))
-    
-    def write_int(self,value,word_offset):
-        self.parent.write_int(self.name,value,False,word_offset)
 
-    
-
+    def write_int(self, value, word_offset):
+        self.parent.write_int(self.name, value, False, word_offset)

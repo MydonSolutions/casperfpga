@@ -15,6 +15,7 @@ class KatAdc(Memory):
     """
     Information above KatAdc yellow blocks. Seems to be called most often via from_device_info.
     """
+
     def __init__(self, parent, name, address, length, device_info):
         """
         Initialise a KatAdc object with the following parameters.
@@ -25,16 +26,20 @@ class KatAdc(Memory):
         :param length:
         :param device_info:
         """
-        super(KatAdc, self).__init__(name=name, width=32, address=address, length=length)
+        super(KatAdc, self).__init__(
+            name=name, width=32, address=address, length=length
+        )
         self.parent = parent
         self.block_info = device_info
-        LOGGER.debug('New KatAdc %s' % self.name)
+        LOGGER.debug("New KatAdc %s" % self.name)
 
     @classmethod
-    def from_device_info(cls, parent, device_name, device_info, memorymap_dict, **kwargs):
+    def from_device_info(
+        cls, parent, device_name, device_info, memorymap_dict, **kwargs
+    ):
         """
         Process device info and the memory map to get all necessary info and return a KatAdc instance.
-        
+
         :param device_name: the unique device name
         :param device_info: information about this device
         :param memorymap_dict: a dictionary containing the device memory map
@@ -44,10 +49,16 @@ class KatAdc(Memory):
         address, length = -1, -1
         for mem_name in memorymap_dict.keys():
             if mem_name == device_name:
-                address, length = memorymap_dict[mem_name]['address'], memorymap_dict[mem_name]['bytes']
+                address, length = (
+                    memorymap_dict[mem_name]["address"],
+                    memorymap_dict[mem_name]["bytes"],
+                )
                 break
         if address == -1 or length == -1:
-            raise RuntimeError('Could not find address or length for KatAdc %s' % device_name)
+            raise RuntimeError(
+                "Could not find address or length for KatAdc %s" % device_name
+            )
         return cls(parent, device_name, address=address, device_info=device_info)
+
 
 # end

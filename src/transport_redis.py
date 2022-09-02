@@ -13,8 +13,8 @@ from threading import Thread
 
 from .transport_tapcp import TapcpTransport
 
-__author__ = 'jackh'
-__date__ = 'May 2019'
+__author__ = "jackh"
+__date__ = "May 2019"
 
 LOGGER = logging.getLogger(__name__)
 REDIS_COMMAND_CHANNEL = "casperfpga:command"
@@ -23,12 +23,14 @@ REDIS_RESPONSE_CHANNEL = "casperfpga:response"
 FAIL = False
 SUCCESS = True
 
+
 class RedisTftp(object):
     """
     # A class-wide variable to hold redis connections.
     # This prevents multiple instances of this class
     # from creating lots and lots (and lots) of redis connections
     """
+
     redis_pool = {}
     redis_conn = {}
 
@@ -41,9 +43,13 @@ class RedisTftp(object):
         """
 
         if redishost not in RedisTftp.redis_pool.keys():
-            RedisTftp.redis_pool[redishost] = redis.ConnectionPool(host=redishost, port=6379, db=0)
+            RedisTftp.redis_pool[redishost] = redis.ConnectionPool(
+                host=redishost, port=6379, db=0
+            )
         if redishost not in RedisTftp.redis_conn.keys():
-            RedisTftp.redis_conn[redishost] = redis.Redis(redishost, connection_pool=RedisTftp.redis_pool[redishost])
+            RedisTftp.redis_conn[redishost] = redis.Redis(
+                redishost, connection_pool=RedisTftp.redis_pool[redishost]
+            )
         self.r = RedisTftp.redis_conn[redishost]
         # Every instance gets its own PubSub object to make sure that multiple
         # RedisTftp instances can be threaded.
@@ -53,11 +59,11 @@ class RedisTftp(object):
         self.resp_chan.subscribe(REDIS_RESPONSE_CHANNEL)
         self._logger = LOGGER
         self.host = host
-    
+
     def __del__(self):
         self.resp_chan.unsubscribe()
         self.resp_chan.close()
-   
+
     def download(self, fname, buf, timeout):
         """
         :param fname (string):  File to be downloaded
@@ -65,14 +71,14 @@ class RedisTftp(object):
         :param timeout (float): Timeout in seconds
         """
         cmd = {
-            "type" : "read",
-            "target" : self.host,
-            "file" : fname,
-            "timeout" : timeout,
-            "id"   : random.randint(2**31),
+            "type": "read",
+            "target": self.host,
+            "file": fname,
+            "timeout": timeout,
+            "id": random.randint(2**31),
         }
         sent_message = self._send_message(cmd)
-        response = self._get_response(sent_message, timeout=2*timeout)
+        response = self._get_response(sent_message, timeout=2 * timeout)
         buf.write(response)
 
     def upload(self, fname, buf, timeout):
@@ -82,18 +88,17 @@ class RedisTftp(object):
         :param timeout (float): Timeout in seconds
         """
         cmd = {
-            "type" : "write",
-            "target" : self.host,
-            "file" : fname,
-            "data" : base64.b64encode(buf.getvalue()),
-            "timeout" : timeout,
-            "id"   : random.randint(2**31),
+            "type": "write",
+            "target": self.host,
+            "file": fname,
+            "data": base64.b64encode(buf.getvalue()),
+            "timeout": timeout,
+            "id": random.randint(2**31),
         }
 
         sent_message = self._send_message(cmd)
-        response = self._get_response(sent_message, timeout=2*timeout)
-        
-        
+        response = self._get_response(sent_message, timeout=2 * timeout)
+
     def _send_message(self, command):
         """
         Send a command to the correlator via the corr:message
@@ -101,17 +106,17 @@ class RedisTftp(object):
         Args:
             command: correlator command
             **kwargs: optional arguments for this command
-        
+
         Returns:
             correlator response to this command
         """
-        message = json.dumps({"command":command, "time":time.time()})
+        message = json.dumps({"command": command, "time": time.time()})
         listeners = self.r.publish(REDIS_COMMAND_CHANNEL, message)
         if listeners == 0:
             self._logger.error("Sent command %s but no-one is listening!" % command)
             return None
         else:
-            return message 
+            return message
 
     def _get_response(self, command, timeout=10):
         """
@@ -120,7 +125,7 @@ class RedisTftp(object):
         Args:
             command: The command (JSON string) issued to the correlator.
             timeout: How many seconds to wait for a correlator response.
-       
+
         Returns:
             Whatever the correlator returns for the given command
         """
@@ -129,11 +134,11 @@ class RedisTftp(object):
         except:
             self._logger.error("Failed to decode sent command")
         target_time = sent_message["time"]
-        target_id  = sent_message["command"]["id"]
+        target_id = sent_message["command"]["id"]
         # This loop only gets activated if we get a response which
         # isn't for us.
-        while(True):
-            message = self.resp_chan.get_message(timeout=1+timeout)
+        while True:
+            message = self.resp_chan.get_message(timeout=1 + timeout)
             if message is not None and message["type"] != "message":
                 continue
             if message is None:
@@ -141,12 +146,16 @@ class RedisTftp(object):
                 raise RuntimeError("Timed out waiting for a correlator response")
                 return
             try:
-                message = json.loads(message["data"])   
+                message = json.loads(message["data"])
             except:
-                self._logger.error("Got a non-JSON message on the correlator response channel")
-                raise RuntimeError("Got a non-JSON message on the correlator response channel")
+                self._logger.error(
+                    "Got a non-JSON message on the correlator response channel"
+                )
+                raise RuntimeError(
+                    "Got a non-JSON message on the correlator response channel"
+                )
                 continue
-            if ((message["id"] == target_id) and (message["time"] == target_time)):
+            if (message["id"] == target_id) and (message["time"] == target_time):
                 self._logger.debug("Got our redis response")
                 if message["status"] != SUCCESS:
                     self._logger.info("Command failed!")
@@ -158,10 +167,12 @@ class RedisTftp(object):
             else:
                 self._logger.debug("Got a redis response which wasn't ours")
 
+
 class RedisTapcpTransport(TapcpTransport):
     """
     Like a TapcpTransport but use a redis gateway instead of a tftp target
     """
+
     def __init__(self, **kwargs):
         """
         :param host (string): hostname of FPGA target
@@ -169,6 +180,7 @@ class RedisTapcpTransport(TapcpTransport):
         """
         TapcpTransport.__init__(self, **kwargs)
         self.t = RedisTftp(kwargs["redishost"], kwargs["host"])
+
 
 class RedisTapcpDaemon(object):
     def __init__(self, redishost):
@@ -184,15 +196,17 @@ class RedisTapcpDaemon(object):
         self.timeout = 1
         self.tftp_connections = {}
         # Queues to store transactions involving different FPGA boards
-        self.hostq = {} # separate queue for each new board
-        self.workers = {} # separate thread for each new board
-    
+        self.hostq = {}  # separate queue for each new board
+        self.workers = {}  # separate thread for each new board
+
     def run(self):
         while True:
             self._process_command()
 
     def _process_command(self):
-        message_raw = self.cmd_chan.get_message(timeout=self.timeout, ignore_subscribe_messages=True)
+        message_raw = self.cmd_chan.get_message(
+            timeout=self.timeout, ignore_subscribe_messages=True
+        )
         if message_raw is None:
             return
         try:
@@ -211,12 +225,13 @@ class RedisTapcpDaemon(object):
         if host not in self.hostq.keys():
             self._logger.debug("Initializing queue for %s" % host)
             self.hostq[host] = Queue()
-            self.workers[host] = Thread(target=self._process_queue, args=(self.hostq[host],host))
+            self.workers[host] = Thread(
+                target=self._process_queue, args=(self.hostq[host], host)
+            )
             self.workers[host].setDaemon(True)
             self.workers[host].start()
         self._logger.debug("Queuing task ID %d for host %s" % (command["id"], host))
         self.hostq[host].put(message)
-            
 
     def _process_queue(self, q, host):
         self._logger.debug("Initializing TFTP connection to %s" % host)

@@ -17,15 +17,16 @@ def screen_teardown():
     """
     Restore sensible options to the terminal upon exit
     """
-    logging.debug('Ncurses screen teardown')
+    logging.debug("Ncurses screen teardown")
     curses.nocbreak()
     curses.echo()
     curses.endwin()
 
 
 class Screenline(object):
-    def __init__(self, data, xpos, ypos, cr=True, fixed=False,
-                 attributes=curses.A_NORMAL):
+    def __init__(
+        self, data, xpos, ypos, cr=True, fixed=False, attributes=curses.A_NORMAL
+    ):
         """
         :param data: A String to be placed on the screen
         :param xpos: x position, -1 means at current xpos
@@ -48,9 +49,11 @@ class Screenline(object):
 
     def __repr__(self):
         return '"%s" len(%i) @ (%i,%i)%s' % (
-            self.data, len(self.data), self.xpos, self.ypos,
-            ' cr' if self.cr else ''
-            ' fixed' if self.fixed else ''
+            self.data,
+            len(self.data),
+            self.xpos,
+            self.ypos,
+            " cr" if self.cr else "" " fixed" if self.fixed else "",
         )
 
 
@@ -58,8 +61,9 @@ class Scroll(object):
     """
     Scrollable ncurses screen.
     """
+
     def __init__(self, debug=False):
-        self._instruction_string = ''
+        self._instruction_string = ""
         self._offset_y = 0
         self._offset_x = 0
         self._screen = None
@@ -99,32 +103,32 @@ class Scroll(object):
             try:
                 key_char = chr(key)
             except ValueError:
-                key_char = '_'
+                key_char = "_"
             if key == 259:
-                self._offset_y -= 1               # up
+                self._offset_y -= 1  # up
             elif key == 258:
-                self._offset_y += 1               # down
+                self._offset_y += 1  # down
             elif key == 261:
-                self._offset_x -= 1               # right
+                self._offset_x -= 1  # right
             elif key == 260:
-                self._offset_x += 1               # left
-            elif key_char == 'q':
-                return [-1, 'q']
-            elif key_char == 'u':
+                self._offset_x += 1  # left
+            elif key_char == "q":
+                return [-1, "q"]
+            elif key_char == "u":
                 self._offset_y -= self._ymax + 1
-            elif key_char == 'd':
+            elif key_char == "d":
                 self._offset_y += self._ymax + 1
-            elif key_char == 'l':
+            elif key_char == "l":
                 self._offset_x += self._xmax
-            elif key_char == 'r':
+            elif key_char == "r":
                 self._offset_x -= self._xmax
-            elif key_char == 'h':
+            elif key_char == "h":
                 self._offset_x = 0
                 self._offset_y = 0
             # LOGGER.debug('[%i %s] keypress event' % (key, key_char))
             return [key, key_char]
         else:
-            return [0, '_']
+            return [0, "_"]
 
     def clear_screen(self):
         """
@@ -138,11 +142,18 @@ class Scroll(object):
         """
         self._curr_y += 1
 
-    def add_string(self, new_str, xpos=-1, ypos=-1, cr=False,
-                   fixed=False, attributes=curses.A_NORMAL):
+    def add_string(
+        self,
+        new_str,
+        xpos=-1,
+        ypos=-1,
+        cr=False,
+        fixed=False,
+        attributes=curses.A_NORMAL,
+    ):
         """
         Add a string to a position on the screen.
-        
+
         :param new_str:
         :param xpos:
         :param ypos:
@@ -153,16 +164,20 @@ class Scroll(object):
         if fixed and ((xpos == -1) or (ypos == -1)):
             # LOGGER.error('Cannot have a fixed string with undefined position: '
             #              '"%s" @ (%i, %i) fixed' % (new_str, xpos, ypos))
-            raise ValueError('Cannot have a fixed string with undefined '
-                             'position')
+            raise ValueError("Cannot have a fixed string with undefined " "position")
         # LOGGER.debug('Added STR len(%i) to position (%i,%i) cr(%s) '
         #              'fixed(%s)' % (len(new_str), xpos, ypos,
         #                             'yes' if cr else 'no',
         #                             'yes' if fixed else 'no'))
         self._sbuffer.append(
-            Screenline(new_str, xpos,
-                       ypos if ypos > -1 else self._curr_y,
-                       cr, fixed, attributes)
+            Screenline(
+                new_str,
+                xpos,
+                ypos if ypos > -1 else self._curr_y,
+                cr,
+                fixed,
+                attributes,
+            )
         )
         if cr:
             self._curr_y += 1
@@ -203,7 +218,7 @@ class Scroll(object):
         strings and Screenlines.
         """
         if not isinstance(screendata, list):
-            raise TypeError('Provided screen data must be a list!')
+            raise TypeError("Provided screen data must be a list!")
         self._sbuffer = []
         self._curr_y = 0
         for line in screendata:
@@ -222,7 +237,7 @@ class Scroll(object):
         for sline in self._sbuffer:
             if sline.ypos == -1:
                 # LOGGER.error('ypos of -1 makes no sense')
-                raise RuntimeError('ypos of -1 makes no sense')
+                raise RuntimeError("ypos of -1 makes no sense")
             maxy = max(maxy, sline.ypos)
         return maxy
 
@@ -342,10 +357,7 @@ class Scroll(object):
         # correct position of truncated strings
         for sctr, sline in enumerate(self._sbuffer):
             pos = positions[sctr]
-            positions[sctr] = (
-                max(0, pos[0]),
-                pos[1]
-            )
+            positions[sctr] = (max(0, pos[0]), pos[1])
         # LOGGER.debug('Corrected positions:')
         # for sctr, position in enumerate(positions):
         #     LOGGER.debug('\tstr_%i: %s' % (sctr, position))
@@ -367,13 +379,12 @@ class Scroll(object):
                 if (self._ymin > 0) and (pos[1] < self._ymin):
                     continue
             str_lims = string_limits[sctr]
-            drstr = sline.data[str_lims[0]:str_lims[1]]
+            drstr = sline.data[str_lims[0] : str_lims[1]]
             if len(drstr) == 0:
                 continue
             try:
                 got_data = True
-                self._screen.addstr(pos[1], pos[0],
-                                    drstr, *sline.line_attributes)
+                self._screen.addstr(pos[1], pos[0], drstr, *sline.line_attributes)
             except Exception as e:
                 # LOGGER.error(
                 #     'ERROR drawing str_%i - currx_y(%i,%i) - start_stop(%i,%i)'
@@ -387,17 +398,18 @@ class Scroll(object):
                 continue
         if not got_data:
             if (self._offset_x != 0) or (self._offset_y != 0):
-                drstr = '<no data onscreen - h to rehome>'
+                drstr = "<no data onscreen - h to rehome>"
             else:
-                drstr = '<no data>'
+                drstr = "<no data>"
             if len(drstr) > self._xmax:
-                drstr = drstr[0:self._xmax]
+                drstr = drstr[0 : self._xmax]
             self._screen.addstr(0, 0, drstr)
-        stat_line = 'Row offset %i. Column offset %i. %s Scroll with arrow keys. \
-        u, d, l, r = page up, down, left and right. h = home, q = quit.' %\
-                    (self._offset_y * -1, self._offset_x,
-                     self._instruction_string)
-        stat_line = stat_line[0:self._xmax]
+        stat_line = (
+            "Row offset %i. Column offset %i. %s Scroll with arrow keys. \
+        u, d, l, r = page up, down, left and right. h = home, q = quit."
+            % (self._offset_y * -1, self._offset_x, self._instruction_string)
+        )
+        stat_line = stat_line[0 : self._xmax]
         self._screen.addstr(self._ymax, 0, stat_line, curses.A_REVERSE)
         self._screen.refresh()
 
@@ -450,5 +462,6 @@ class Scroll(object):
     #         self._curr_x += len(new_string)
     #     if refresh:
     #         self._screen.refresh()
+
 
 # end of file

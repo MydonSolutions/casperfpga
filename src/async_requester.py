@@ -12,6 +12,7 @@ class AsyncRequester(object):
     """
     A class to hold information about a specific KATCP request made by a FPGA.
     """
+
     def __init__(self, host, request_func, max_requests=100):
         self.host = host
         self._nb_request_id_lock = threading.Lock()
@@ -79,11 +80,14 @@ class AsyncRequester(object):
         :return:
         """
         if request_id in self._nb_requests.keys():
-            raise RuntimeError('Trying to add request with id(%s) but it '
-                               'already exists.' % request_id)
+            raise RuntimeError(
+                "Trying to add request with id(%s) but it "
+                "already exists." % request_id
+            )
         self._nb_requests_lock.acquire()
         self._nb_requests[request_id] = AsyncRequest(
-            self.host, request_name, request_id, inform_cb, reply_cb)
+            self.host, request_name, request_id, inform_cb, reply_cb
+        )
         self._nb_requests_lock.release()
 
     def nb_get_next_request_id(self):
@@ -104,10 +108,12 @@ class AsyncRequester(object):
         :param msg - the received message
         :param userdata
         """
-        request_id = ''.join(userdata)
+        request_id = "".join(userdata)
         if request_id not in self._nb_requests.keys():
-            raise RuntimeError('Recieved reply for request_id(%s), but no such '
-                               'stored request.' % request_id)
+            raise RuntimeError(
+                "Recieved reply for request_id(%s), but no such "
+                "stored request." % request_id
+            )
         self._nb_requests[request_id].got_reply(msg.copy())
 
     def nb_informcb(self, msg, *userdata):
@@ -117,10 +123,12 @@ class AsyncRequester(object):
         :param msg - the received message
         :param userdata
         """
-        request_id = ''.join(userdata)
+        request_id = "".join(userdata)
         if request_id not in self._nb_requests.keys():
-            raise RuntimeError('Recieved inform for request_id(%s), but no '
-                               'such stored request.' % request_id)
+            raise RuntimeError(
+                "Recieved inform for request_id(%s), but no "
+                "such stored request." % request_id
+            )
         self._nb_requests[request_id].got_inform(msg.copy())
 
     def nb_request(self, request, inform_cb=None, reply_cb=None, *args):
@@ -136,22 +144,28 @@ class AsyncRequester(object):
         """
         if len(self._nb_requests) == self._nb_max_requests:
             oldreq = self.nb_pop_oldest_request()
-            LOGGER.debug('Request list full, removing oldest one(%s,%s).' % (
-                oldreq.request, oldreq.request_id))
+            LOGGER.debug(
+                "Request list full, removing oldest one(%s,%s)."
+                % (oldreq.request, oldreq.request_id)
+            )
         request_id = self.nb_get_next_request_id()
         self.nb_add_request(request, request_id, inform_cb, reply_cb)
         request_msg = Message.request(request, *args)
-        self._nb_request_func(msg=request_msg, reply_cb=self.nb_replycb,
-                              inform_cb=self.nb_informcb, user_data=request_id)
-        return {'host': self.host, 'request': request, 'id': request_id}
+        self._nb_request_func(
+            msg=request_msg,
+            reply_cb=self.nb_replycb,
+            inform_cb=self.nb_informcb,
+            user_data=request_id,
+        )
+        return {"host": self.host, "request": request, "id": request_id}
 
 
 class AsyncRequest(object):
     """
     A class to hold information about a specific KATCP request made by a FPGA.
     """
-    def __init__(self, host, request, request_id,
-                 inform_cb=None, reply_cb=None):
+
+    def __init__(self, host, request, request_id, inform_cb=None, reply_cb=None):
         self.host = host
         self.request = request
         self.request_id = request_id
@@ -168,9 +182,13 @@ class AsyncRequest(object):
 
         :return:
         """
-        return '%s(%s)@(%10.5f) - reply%s - informs(%i)' % (
-            self.request, self.request_id, self.time_tx,
-            str(self.reply), len(self.informs))
+        return "%s(%s)@(%10.5f) - reply%s - informs(%i)" % (
+            self.request,
+            self.request_id,
+            self.time_tx,
+            str(self.reply),
+            len(self.informs),
+        )
 
     def got_reply(self, reply_message):
         """
@@ -179,8 +197,10 @@ class AsyncRequest(object):
         :return:
         """
         if not reply_message.name == self.request:
-            error_string = 'rx reply(%s) does not match request(%s)' % (
-                reply_message.name, self.request)
+            error_string = "rx reply(%s) does not match request(%s)" % (
+                reply_message.name,
+                self.request,
+            )
             LOGGER.error(error_string)
             raise RuntimeError(error_string)
         self.reply = reply_message
@@ -195,13 +215,17 @@ class AsyncRequest(object):
         :return:
         """
         if self.reply is not None:
-            _errmsg = 'Received inform for message(%s,%s) after reply. ' \
-                      'Invalid?' % (self.request, self.request_id)
+            _errmsg = "Received inform for message(%s,%s) after reply. " "Invalid?" % (
+                self.request,
+                self.request_id,
+            )
             LOGGER.error(_errmsg)
             raise RuntimeError(_errmsg)
         if not inform_message.name == self.request:
-            _errmsg = 'rx inform(%s) does not match request(%s)' % (
-                inform_message.name, self.request)
+            _errmsg = "rx inform(%s) does not match request(%s)" % (
+                inform_message.name,
+                self.request,
+            )
             LOGGER.error(_errmsg)
             raise RuntimeError(_errmsg)
         self.informs.append(inform_message)

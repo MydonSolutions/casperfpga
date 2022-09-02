@@ -28,14 +28,40 @@ NUM_DELAY_TAPS = 32
 MINIMUM_WINDOW_LENGTH = 4
 
 CAL_DATA = [
-    [0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-     0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555],
+    [
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+        0xAAAAAAAA,
+        0x55555555,
+    ],
     [0, 0, 0xFFFFFFFF, 0, 0, 0, 0, 0],
     numpy.arange(256) << 0,
     numpy.arange(256) << 8,
@@ -89,11 +115,13 @@ class Qdr(Memory):
     """
     Qdr memory on an FPGA.
     """
-    def __init__(self, parent, name, address, length_bytes,
-                 device_info, ctrlreg_address):
+
+    def __init__(
+        self, parent, name, address, length_bytes, device_info, ctrlreg_address
+    ):
         """
         Make the QDR instance, given a parent, name and info from Simulink.
-        
+
         * Most often called from_device_info
 
         :param parent: Parent device who owns this Qdr
@@ -103,21 +131,32 @@ class Qdr(Memory):
         :param device_info: Information about this Qdr device
         :param ctrlreg_address:
         """
-        super(Qdr, self).__init__(name=name, width_bits=32,
-                                  address=address, length_bytes=length_bytes)
+        super(Qdr, self).__init__(
+            name=name, width_bits=32, address=address, length_bytes=length_bytes
+        )
         self.parent = parent
         self.block_info = device_info
-        self.which_qdr = self.block_info['which_qdr']
+        self.which_qdr = self.block_info["which_qdr"]
         self.ctrl_reg = register.Register(
-            self.parent, self.which_qdr+'_ctrl', address=ctrlreg_address,
-            device_info={'tag': 'xps:sw_reg', 'mode': 'one\_value',
-                         'io_dir': 'From\_Processor', 'io_delay': '0',
-                         'sample_period': '1', 'names': 'reg',
-                         'bitwidths': '32', 'arith_types': '0',
-                         'bin_pts': '0', 'sim_port': 'on',
-                         'show_format': 'off'})
-        self.memory = self.which_qdr + '_memory'
-        self.control_mem = self.which_qdr + '_ctrl'
+            self.parent,
+            self.which_qdr + "_ctrl",
+            address=ctrlreg_address,
+            device_info={
+                "tag": "xps:sw_reg",
+                "mode": "one\_value",
+                "io_dir": "From\_Processor",
+                "io_delay": "0",
+                "sample_period": "1",
+                "names": "reg",
+                "bitwidths": "32",
+                "arith_types": "0",
+                "bin_pts": "0",
+                "sim_port": "on",
+                "show_format": "off",
+            },
+        )
+        self.memory = self.which_qdr + "_memory"
+        self.control_mem = self.which_qdr + "_ctrl"
         # self.qdr_cal()
 
         # some readability tweaks
@@ -130,11 +169,13 @@ class Qdr(Memory):
         #     self.name, LOGGER.name, id(LOGGER), LOGGER.level)
         # print('qdr logger handlers:', LOGGER.handlers)
 
-        LOGGER.debug('New Qdr %s' % self)
+        LOGGER.debug("New Qdr %s" % self)
         # TODO - Link QDR ctrl register to self.registers properly
 
     @classmethod
-    def from_device_info(cls, parent, device_name, device_info, memorymap_dict, **kwargs):
+    def from_device_info(
+        cls, parent, device_name, device_info, memorymap_dict, **kwargs
+    ):
         """
         Process device info and the memory map to get all necessary info and
         return a Qdr instance.
@@ -145,38 +186,41 @@ class Qdr(Memory):
         :param memorymap_dict: a dictionary containing the device memory map
         :return: a Qdr object
         """
+
         def find_info(suffix):
             address, length = -1, -1
-            fullname = device_info['which_qdr'] + suffix
+            fullname = device_info["which_qdr"] + suffix
             for mem_name in memorymap_dict.keys():
                 if mem_name == fullname:
-                    address = memorymap_dict[mem_name]['address']
-                    length = memorymap_dict[mem_name]['bytes']
+                    address = memorymap_dict[mem_name]["address"]
+                    length = memorymap_dict[mem_name]["bytes"]
                     break
             if address == -1 or length == -1:
-                raise RuntimeError('QDR %s: could not find memory address and'
-                                   'length for device %s' % (device_name,
-                                                             fullname))
+                raise RuntimeError(
+                    "QDR %s: could not find memory address and"
+                    "length for device %s" % (device_name, fullname)
+                )
             return address, length
 
-        mem_address, mem_length = find_info('_memory')
-        ctrlreg_address, ctrlreg_length = find_info('_memory')
+        mem_address, mem_length = find_info("_memory")
+        ctrlreg_address, ctrlreg_length = find_info("_memory")
         # TODO - is the ctrl reg a register or the whole 256 bytes?
-        return cls(parent, device_name, mem_address, mem_length,
-                   device_info, ctrlreg_address)
+        return cls(
+            parent, device_name, mem_address, mem_length, device_info, ctrlreg_address
+        )
 
     def __repr__(self):
         """
         :return: a string representation of the Qdr Class
         """
-        return '%s:%s' % (self.__class__.__name__, self.name)
+        return "%s:%s" % (self.__class__.__name__, self.name)
 
     def reset(self):
         """
         Reset the QDR controller by toggling the lsb of the control register.
         Sets all taps to zero (all IO delays reset).
         """
-        LOGGER.debug('qdr reset')
+        LOGGER.debug("qdr reset")
         self.ctrl_reg.write_int(1, blindwrite=True)
         self.ctrl_reg.write_int(0, blindwrite=True)
 
@@ -187,8 +231,7 @@ class Qdr(Memory):
         :param value:
         :param offset:
         """
-        self.p_write_int(self.control_mem, value,
-                         blindwrite=True, word_offset=offset)
+        self.p_write_int(self.control_mem, value, blindwrite=True, word_offset=offset)
 
     def _disable_fabric(self):
         """
@@ -231,8 +274,8 @@ class Qdr(Memory):
         """
         if step == 0:
             return
-        self._control_mem_write(0 if step < 0 else 0xffffffff, 7)
-        logl1('Applying clock delay: {}'.format(step))
+        self._control_mem_write(0 if step < 0 else 0xFFFFFFFF, 7)
+        logl1("Applying clock delay: {}".format(step))
         for _ctr in range(abs(step)):
             self._control_mem_write(0, 5)
             self._control_mem_write(1 << 8, 5)
@@ -246,19 +289,19 @@ class Qdr(Memory):
         """
         if step == 0:
             return
-        self._control_mem_write(0 if step < 0 else 0xffffffff, 7)
-        if inout == 'in':
+        self._control_mem_write(0 if step < 0 else 0xFFFFFFFF, 7)
+        if inout == "in":
             offset = 4
-            maskval = 0xf & (bitmask >> 32)
-        elif inout == 'out':
+            maskval = 0xF & (bitmask >> 32)
+        elif inout == "out":
             offset = 6
-            maskval = (0xf & (bitmask >> 32)) << 4
+            maskval = (0xF & (bitmask >> 32)) << 4
         else:
-            raise ValueError('Unknown delay type: {}'.format(inout))
+            raise ValueError("Unknown delay type: {}".format(inout))
         for _ctr in range(abs(step)):
             self._control_mem_write(0, offset)
             self._control_mem_write(0, 5)
-            self._control_mem_write(0xffffffff & bitmask, offset)
+            self._control_mem_write(0xFFFFFFFF & bitmask, offset)
             self._control_mem_write(maskval, 5)
 
     def _qdr_delay_out_step(self, bitmask, step):
@@ -268,7 +311,7 @@ class Qdr(Memory):
         :param bitmask:
         :param step:
         """
-        self._qdr_delay_inout_step('out', bitmask, step)
+        self._qdr_delay_inout_step("out", bitmask, step)
 
     def _qdr_delay_in_step(self, bitmask, step):
         """
@@ -278,17 +321,18 @@ class Qdr(Memory):
         :param step:
         :return:
         """
-        self._qdr_delay_inout_step('in', bitmask, step)
+        self._qdr_delay_inout_step("in", bitmask, step)
 
     def _qdr_delay_clk_get(self):
         """
         Gets the current value for the clk delay.
         """
         raw = self.p_read_uint(self.control_mem, word_offset=8)
-        if (raw & 0x1f) != ((raw & (0x1f << 5)) >> 5):
-            raise RuntimeError('Counter values not the same -- logic error! '
-                               'Got back %i.' % raw)
-        return raw & 0x1f
+        if (raw & 0x1F) != ((raw & (0x1F << 5)) >> 5):
+            raise RuntimeError(
+                "Counter values not the same -- logic error! " "Got back %i." % raw
+            )
+        return raw & 0x1F
 
     def qdr_cal_check(self, step=-1, quickcheck=True):
         """
@@ -300,10 +344,9 @@ class Qdr(Memory):
         """
         patfail = 0
         for pattern in CAL_DATA:
-            data_format = '>%iL' % len(pattern)
-            self.p_bwrite(
-                self.memory, struct.pack(data_format, *pattern))
-            curr_val = self.p_read(self.memory, len(pattern)*4)
+            data_format = ">%iL" % len(pattern)
+            self.p_bwrite(self.memory, struct.pack(data_format, *pattern))
+            curr_val = self.p_read(self.memory, len(pattern) * 4)
             curr_val = struct.unpack(data_format, curr_val)
             for word_n, word in enumerate(pattern):
                 faildiff = word ^ curr_val[word_n]
@@ -321,8 +364,7 @@ class Qdr(Memory):
         """
         per_step_fail = []
         per_bit_cal = [[] for _ in range(QDR_WW_LIMITED)]
-        logl2('QDR({}) checking cal over {} steps'.format(
-            self.name, NUM_DELAY_TAPS))
+        logl2("QDR({}) checking cal over {} steps".format(self.name, NUM_DELAY_TAPS))
         for step in range(NUM_DELAY_TAPS):
             # check this step
             res, fail_pattern = self.qdr_cal_check(step, False)
@@ -332,17 +374,17 @@ class Qdr(Memory):
                 masked_bit = (fail_pattern >> bit) & 0x01
                 bit_value = -1 if masked_bit else 1
                 per_bit_cal[bit].append(bit_value)
-            logl3('\tstep input delays to {}'.format(step+1))
-            self._qdr_delay_in_step(0xfffffffff, 1)
+            logl3("\tstep input delays to {}".format(step + 1))
+            self._qdr_delay_in_step(0xFFFFFFFFF, 1)
 
         # print(the failure patterns)
-        logl2('Eye for QDR {:s} (0 is pass, 1 is fail):'.format(self.name))
+        logl2("Eye for QDR {:s} (0 is pass, 1 is fail):".format(self.name))
         for step, fail_pattern in enumerate(per_step_fail):
-            logl2('\tdelay_step {:2d}: {:032b}'.format(step, fail_pattern))
+            logl2("\tdelay_step {:2d}: {:032b}".format(step, fail_pattern))
         # print(the per-bit eye diagrams)
-        logl3('Per-bit cal:')
+        logl3("Per-bit cal:")
         for bit, bit_eye in enumerate(per_bit_cal):
-            logl3('\tbit_{:d}: {}'.format(bit, bit_eye))
+            logl3("\tbit_{:d}: {}".format(bit, bit_eye))
 
         # # find indices where calibration passed and failed:
         # for bit in range(n_bits):
@@ -353,35 +395,37 @@ class Qdr(Memory):
         # logl0('valid_steps for bit {} {}'.format(bit, valid_steps[bit]))
 
         cal = {
-            'steps': numpy.array([0] * (QDR_WW_LIMITED + 4)),
-            'area': numpy.array([0] * QDR_WW_LIMITED),
-            'start': numpy.array([0] * QDR_WW_LIMITED),
-            'stop': numpy.array([0] * QDR_WW_LIMITED)
+            "steps": numpy.array([0] * (QDR_WW_LIMITED + 4)),
+            "area": numpy.array([0] * QDR_WW_LIMITED),
+            "start": numpy.array([0] * QDR_WW_LIMITED),
+            "stop": numpy.array([0] * QDR_WW_LIMITED),
         }
         # for each bit, calculate the area that is best calibrated
         for bit, bit_eye in enumerate(per_bit_cal):
             area, start, stop = find_cal_area(bit_eye)
             if area < MINIMUM_WINDOW_LENGTH:
-                raise RuntimeError('Could not find a robust calibration '
-                                   'setting for QDR %s' % self.name)
+                raise RuntimeError(
+                    "Could not find a robust calibration "
+                    "setting for QDR %s" % self.name
+                )
             # original was 1/2
             # running on /4 for some months, but seems to be giving errors
             # with hot roaches
-            cal['start'][bit] = start
-            cal['stop'][bit] = stop
-            cal['steps'][bit] = (start + stop) // 2
+            cal["start"][bit] = start
+            cal["stop"][bit] = stop
+            cal["steps"][bit] = (start + stop) // 2
             # cal['steps'][bit] = (start + stop) // 3
             # cal['steps'][bit] = (start + stop) // 4
 
         # since we don't have access to bits 32-36, we guess the number of
         # taps required based on the lower 32 bits:
         # MEDIAN
-        median_taps = numpy.median(cal['steps'])
-        logl1('Median taps: {}'.format(median_taps))
+        median_taps = numpy.median(cal["steps"])
+        logl1("Median taps: {}".format(median_taps))
         for bit in range(QDR_WW_LIMITED, QDR_WORD_WIDTH):
-            cal['steps'][bit] = median_taps
+            cal["steps"][bit] = median_taps
 
-        logl1('Selected per-bit delays: {}'.format(cal['steps']))
+        logl1("Selected per-bit delays: {}".format(cal["steps"]))
 
         # # MEAN
         # mean_taps = numpy.mean(cal_steps)
@@ -391,7 +435,7 @@ class Qdr(Memory):
         #     logl1('Selected tap for bit {}: {}'.format(
         #         bit, cal_steps[bit]))
 
-        return cal['steps'], cal['area'], cal['start'], cal['stop']
+        return cal["steps"], cal["area"], cal["start"], cal["stop"]
 
     def _apply_calibration(self, in_delays, out_delays, clk_delay, extra_clk=0):
         """
@@ -412,18 +456,17 @@ class Qdr(Memory):
 
         self._qdr_delay_clk_step(clk_delay)
 
-        for delays, delaypref in [(in_delays, 'in'), (out_delays, 'out')]:
+        for delays, delaypref in [(in_delays, "in"), (out_delays, "out")]:
             _maxdelay = int(max(delays))
             if _maxdelay == 0:
-                logl2('No {}put delays to apply'.format(delaypref))
+                logl2("No {}put delays to apply".format(delaypref))
             else:
-                logl1('Applying {}put delays up to {}:'.format(
-                    delaypref, _maxdelay))
+                logl1("Applying {}put delays up to {}:".format(delaypref, _maxdelay))
             for step in range(_maxdelay):
                 mask = 0
                 for bit in range(len(delays)):
-                    mask += (1 << bit if (step < delays[bit]) else 0)
-                logl1('\tstep {} {} {:036b}'.format(delaypref, step, mask))
+                    mask += 1 << bit if (step < delays[bit]) else 0
+                logl1("\tstep {} {} {:036b}".format(delaypref, step, mask))
                 self._qdr_delay_inout_step(delaypref, mask, 1)
 
     def qdr_cal(self, fail_hard=True):
@@ -441,7 +484,7 @@ class Qdr(Memory):
         :param fail_hard:
         """
         cal = False
-        failure_pattern = 0xffffffff
+        failure_pattern = 0xFFFFFFFF
         out_step = 0
         while (not cal) and (out_step < NUM_DELAY_TAPS - 1):
             # reset all the in delays to zero, and the out delays to
@@ -449,29 +492,29 @@ class Qdr(Memory):
             in_delays = [0] * QDR_WORD_WIDTH
             _out_delays = [out_step] * QDR_WORD_WIDTH
             _current_step = self._qdr_delay_clk_get()
-            logl1('Output delay: current({}) set_to({})'.format(
-                _current_step, out_step))
-            self._apply_calibration(in_delays=in_delays,
-                                    out_delays=_out_delays,
-                                    clk_delay=out_step)
+            logl1(
+                "Output delay: current({}) set_to({})".format(_current_step, out_step)
+            )
+            self._apply_calibration(
+                in_delays=in_delays, out_delays=_out_delays, clk_delay=out_step
+            )
             try:
                 in_delays, area, start, stop = self._find_in_delays()
             except AssertionError:
                 in_delays = [0] * QDR_WORD_WIDTH
             except Exception as e:
-                raise RuntimeError('Unknown exception in qdr_cal - '
-                                   '{}'.format(e))
+                raise RuntimeError("Unknown exception in qdr_cal - " "{}".format(e))
 
             # update the out delays with the current input delays
             _out_delays = [out_step] * QDR_WORD_WIDTH
-            self._apply_calibration(in_delays=in_delays,
-                                    out_delays=_out_delays,
-                                    clk_delay=out_step)
+            self._apply_calibration(
+                in_delays=in_delays, out_delays=_out_delays, clk_delay=out_step
+            )
             cal, failure_pattern = self.qdr_cal_check()
             out_step += 1
 
         if (not cal) and fail_hard:
-            raise RuntimeError('QDR %s calibration failed.' % self.name)
+            raise RuntimeError("QDR %s calibration failed." % self.name)
         return cal, failure_pattern
 
     def qdr_check_cal_any_good(self, current_step, checkoffset=2**22):
@@ -484,21 +527,20 @@ class Qdr(Memory):
         """
         patfail = 0
         for pn, pattern in enumerate(CAL_DATA):
-            logl2('pattern[0]: {:x}'.format(pattern[0]))
-            _patternstr = '>%iL' % len(pattern)
+            logl2("pattern[0]: {:x}".format(pattern[0]))
+            _patternstr = ">%iL" % len(pattern)
             _wrdata = struct.pack(_patternstr, *pattern)
             self.p_bwrite(self.memory, _wrdata, offset=checkoffset)
-            _rdata = self.p_read(self.memory, len(pattern) * 4,
-                                 offset=checkoffset)
+            _rdata = self.p_read(self.memory, len(pattern) * 4, offset=checkoffset)
             retdat = struct.unpack(_patternstr, _rdata)
             for word_n, word in enumerate(pattern):
                 patfail |= word ^ retdat[word_n]
                 # logl2('\tcurstep({}) written({:032b}) read({:032b}) '
                 #       'faildiff({:032b})'.format(current_step, word,
                 #                                  retdat[word_n], patfail))
-                if patfail == 0xffffffff:
+                if patfail == 0xFFFFFFFF:
                     # none of the bits were correct, so bail
-                    logl2('No good bits found, bailing.')
+                    logl2("No good bits found, bailing.")
                     return False
         return True
 
@@ -508,7 +550,7 @@ class Qdr(Memory):
         use this as the start point for the input delay scan. This makes life
         a little simpler than letting the input and output delays of all bits
         be completely independent.
-        
+
         If no good bits are found, that's fine, we'll just leave the output
         delay set to the maximum allowed
         """
@@ -532,6 +574,7 @@ class Qdr(Memory):
             return False
         :param min_eye_width: What is the minimum eye width we'll accept?
         """
+
         def _find_out_delay(add_extra_latency=False):
             # reset all delays and set extra latency to zero.
             self.qdr_reset()
@@ -540,14 +583,13 @@ class Qdr(Memory):
                 self._add_extra_latency(1)
             # find the first output delay that may work with no input delay
             out_step = self._scan_out_to_edge()
-            logl1('Output delays set to {}'.format(out_step))
+            logl1("Output delays set to {}".format(out_step))
             # find input delays for this output delay
             in_dels, areas, starts, stops = self._find_in_delays()
             return out_step, in_dels, areas, starts, stops
 
         # find an initial solution
-        out_step0, in_delays0, good_area0, good_starts0, \
-            good_stops0 = _find_out_delay()
+        out_step0, in_delays0, good_area0, good_starts0, good_stops0 = _find_out_delay()
 
         # if any of the calibration eyes are less than some minimum width,
         # and there is a chance that adding an extra cycle of latency will
@@ -556,30 +598,38 @@ class Qdr(Memory):
         in_delays = in_delays0
         out_delay = out_step0
         extra_clk = False
-        max_input_delay_required = numpy.any(good_stops0 == NUM_DELAY_TAPS-1)
+        max_input_delay_required = numpy.any(good_stops0 == NUM_DELAY_TAPS - 1)
         eyes_too_small = numpy.any(good_area0 < min_eye_width)
         if max_input_delay_required and eyes_too_small:
-            logl1('Adding extra latency and checking for better solutions')
-            out_step1, in_delays1, good_area1, good_starts1, \
-                good_stops1 = _find_out_delay()
+            logl1("Adding extra latency and checking for better solutions")
+            (
+                out_step1,
+                in_delays1,
+                good_area1,
+                good_starts1,
+                good_stops1,
+            ) = _find_out_delay()
             if numpy.all(good_area1 > good_area0):
-                logl1('New solutions with extra latency are better')
+                logl1("New solutions with extra latency are better")
                 in_delays = in_delays1
                 out_delay = out_step1
                 extra_clk = True
             else:
-                logl1('Original solution without extra latency was better')
+                logl1("Original solution without extra latency was better")
 
-        logl1('Using in delays: {}'.format(in_delays))
-        self._apply_calibration(in_delays=in_delays,
-                                out_delays=[out_delay] * QDR_WORD_WIDTH,
-                                clk_delay=out_delay,
-                                extra_clk=extra_clk)
+        logl1("Using in delays: {}".format(in_delays))
+        self._apply_calibration(
+            in_delays=in_delays,
+            out_delays=[out_delay] * QDR_WORD_WIDTH,
+            clk_delay=out_delay,
+            extra_clk=extra_clk,
+        )
 
         cal, failure_pattern = self.qdr_cal_check()
         self._enable_fabric()
         if (not cal) and fail_hard:
-            raise RuntimeError('QDR %s calibration failed.' % self.name)
+            raise RuntimeError("QDR %s calibration failed." % self.name)
         return cal, failure_pattern
+
 
 # end

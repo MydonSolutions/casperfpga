@@ -1,4 +1,4 @@
-import time,logging,collections,warnings
+import time, logging, collections, warnings
 
 PRERlo = 0
 PRERhi = 1
@@ -13,21 +13,23 @@ CMD_START = 1 << 7
 CMD_STOP = 1 << 6
 CMD_READ = 1 << 5
 CMD_WRITE = 1 << 4
-CMD_NACK = 1 << 3 # Not ACKnowledge, output 1 on SDA means release SDA and let VDD drives SDA high
-CMD_IACK = 1 << 0 # interrupt ack, not supported
+CMD_NACK = (
+    1 << 3
+)  # Not ACKnowledge, output 1 on SDA means release SDA and let VDD drives SDA high
+CMD_IACK = 1 << 0  # interrupt ack, not supported
 
-CORE_EN = 1 << 7 # i2c core enable
-INT_EN = 1 << 6 # interrupt enable, not supported
+CORE_EN = 1 << 7  # i2c core enable
+INT_EN = 1 << 6  # interrupt enable, not supported
 
 WRITE_BIT = 0
 READ_BIT = 1
 
 logger = logging.getLogger(__name__)
 
-class I2C:
 
-    def __init__(self,fpga,controller_name,**kwargs):
-        """ I2C module for I2C yellow block
+class I2C:
+    def __init__(self, fpga, controller_name, **kwargs):
+        """I2C module for I2C yellow block
 
         fpga: casperfpga.CasperFpga instance
         controller_name: The name of the I2C yellow block
@@ -39,15 +41,15 @@ class I2C:
         self.controller_name = controller_name
         self.enable_core()
 
-        self.setClock(10,100)
+        self.setClock(10, 100)
 
         self._retry = 3
         if kwargs is not None:
-            if 'retry' in kwargs:
-                self._retry = int(kwargs['retry'])
+            if "retry" in kwargs:
+                self._retry = int(kwargs["retry"])
 
     def setClock(self, target, reference=100):
-        """ 
+        """
         Set I2C bus clock
 
         The I2C module uses a divider to generate its clock from a reference
@@ -60,13 +62,23 @@ class I2C:
            setClock(10,100)    # Set I2C bus clock speed to 10 kHz, given a system clock of 100 MHz
 
         """
-        preScale = int((reference*1e3/(5*target))-1)
+        preScale = int((reference * 1e3 / (5 * target)) - 1)
         # Clear EN bit in the control register before writing to prescale register
         self.disable_core()
         # Write the preScale factor to the Prescale Register's low bit
-        self.fpga.write_int(self.controller_name, (preScale >> 0) & 0xff, word_offset=PRERlo, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name,
+            (preScale >> 0) & 0xFF,
+            word_offset=PRERlo,
+            blindwrite=True,
+        )
         # Write the preScale factor to the Prescale Register's high bit
-        self.fpga.write_int(self.controller_name, (preScale >> 8) & 0xff, word_offset=PRERhi, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name,
+            (preScale >> 8) & 0xFF,
+            word_offset=PRERhi,
+            blindwrite=True,
+        )
         # Re-enable core
         self.enable_core()
 
@@ -74,12 +86,12 @@ class I2C:
         self.T = 1.0 / target / 1000
 
     def getClock(self, reference=None):
-        """ 
+        """
         Get I2C clock speed
 
         If the reference clock speed is not provided, this method returns the preScale,
         which equals to:
-        
+
         preScale = int((reference*1e3/(5*target))-1)
 
         where target is the desired I2C clock speed in kHz. Reference clock speed is in MHz.
@@ -95,14 +107,13 @@ class I2C:
         highBit = self.fpga.read_int(self.controller_name, word_offset=PRERhi)
         preScale = (highBit << 8) + lowBit
 
-        if reference==None:
+        if reference == None:
             return preScale
         else:
-            return '{} kHz'.format(reference*200./(preScale+1))
-
+            return "{} kHz".format(reference * 200.0 / (preScale + 1))
 
     def getStatus(self):
-        """ Get current status of the I2C module
+        """Get current status of the I2C module
 
         The status is kept in a dict structure, items of which include:
 
@@ -114,63 +125,79 @@ class I2C:
         """
         status = self.fpga.read_int(self.controller_name, word_offset=statusReg)
         statusDict = {
-            "ACK"  : (status >> 7) & 1,
-            "BUSY" : (status >> 6) & 1,
-            "ARB"  : (status >> 5) & 1,
-            "TIP"  : (status >> 1) & 1,
-            "INT"  : (status >> 0) & 1,
-            }
+            "ACK": (status >> 7) & 1,
+            "BUSY": (status >> 6) & 1,
+            "ARB": (status >> 5) & 1,
+            "TIP": (status >> 1) & 1,
+            "INT": (status >> 0) & 1,
+        }
         return statusDict
 
     def enable_core(self):
         """
-        Enable the wb-i2c core. 
-        
+        Enable the wb-i2c core.
+
         * Set the I2C enable bit to 1,
         * Set the interrupt bit to 0 (disabled).
         """
         I2C_ENABLE_OFFSET = 7
-        self.fpga.write_int(self.controller_name, 1<<I2C_ENABLE_OFFSET, word_offset=controlReg, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name,
+            1 << I2C_ENABLE_OFFSET,
+            word_offset=controlReg,
+            blindwrite=True,
+        )
 
     def disable_core(self):
         """
-        Disable the wb-i2c core. 
-        
+        Disable the wb-i2c core.
+
         * Set the I2C enable bit to 0,
         * Set the interrupt bit to 0 (disabled).
         """
         I2C_ENABLE_OFFSET = 7
-        self.fpga.write_int(self.controller_name, 0<<I2C_ENABLE_OFFSET, word_offset=controlReg, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name,
+            0 << I2C_ENABLE_OFFSET,
+            word_offset=controlReg,
+            blindwrite=True,
+        )
 
     def _reset_bus(self):
 
         reg = commandReg
-        data = CMD_START|CMD_STOP
+        data = CMD_START | CMD_STOP
 
-        self.fpga.write_int(self.controller_name, data, word_offset=reg, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name, data, word_offset=reg, blindwrite=True
+        )
 
         status = self.getStatus()
-        for i in range(self._retry+1):
-            if not status['TIP']:
+        for i in range(self._retry + 1):
+            if not status["TIP"]:
                 break
             elif i == self._retry:
-                raise IOError('Stuck in TIP state')
+                raise IOError("Stuck in TIP state")
             else:
                 time.sleep(self.T)
                 status = self.getStatus()
 
-        self.fpga.write_int(self.controller_name, data, word_offset=reg, blindwrite=True)
+        self.fpga.write_int(
+            self.controller_name, data, word_offset=reg, blindwrite=True
+        )
 
         time.sleep(self.T)
 
-    def _itf_write(self,reg,data):
-        self.fpga.write_int(self.controller_name, data, word_offset=reg, blindwrite=True)
+    def _itf_write(self, reg, data):
+        self.fpga.write_int(
+            self.controller_name, data, word_offset=reg, blindwrite=True
+        )
 
-        #start = time.clock()
-        #print('start at {}'.format(start))
-        #status = self.getStatus()
-        #i = 0
-        #while status['TIP']:
+        # start = time.clock()
+        # print('start at {}'.format(start))
+        # status = self.getStatus()
+        # i = 0
+        # while status['TIP']:
         #    status = self.getStatus()
         #    tick = time.clock()
         #    print('{}\t{}'.format(tick-start, status))
@@ -179,24 +206,24 @@ class I2C:
         #        raise IOError('stuck on TIP')
 
         status = self.getStatus()
-        for i in range(self._retry+1):
-            if not status['TIP']:
+        for i in range(self._retry + 1):
+            if not status["TIP"]:
                 break
             elif i == self._retry:
-                raise IOError('Stuck in TIP state')
+                raise IOError("Stuck in TIP state")
             else:
                 time.sleep(self.T)
                 status = self.getStatus()
 
-        if reg==commandReg and data&CMD_WRITE:
-            if status['ACK'] == 1:
-                raise IOError('No acknowledgement from target address')
+        if reg == commandReg and data & CMD_WRITE:
+            if status["ACK"] == 1:
+                raise IOError("No acknowledgement from target address")
 
-    def _itf_read(self,addr):
+    def _itf_read(self, addr):
         return self.fpga.read_int(self.controller_name, word_offset=addr)
 
-    def _write(self,addr,data):
-        """ 
+    def _write(self, addr, data):
+        """
         I2C write primitive
 
         I2C writes arbitary number of bytes to a slave device, It carries out
@@ -216,17 +243,17 @@ class I2C:
            _write(0x20,range(10))  # Write [0..9] to a slave at address 0x20
         """
 
-        self._itf_write(transmitReg,    (addr<<1)|WRITE_BIT)
-        self._itf_write(commandReg, CMD_START|CMD_WRITE)
-        if isinstance(data,int):
+        self._itf_write(transmitReg, (addr << 1) | WRITE_BIT)
+        self._itf_write(commandReg, CMD_START | CMD_WRITE)
+        if isinstance(data, int):
             data = [data]
         for d in data:
-            self._itf_write(transmitReg,    d)
+            self._itf_write(transmitReg, d)
             self._itf_write(commandReg, CMD_WRITE)
         self._itf_write(commandReg, CMD_STOP)
 
-    def _read(self,addr,length=1):
-        """ 
+    def _read(self, addr, length=1):
+        """
         I2C read primitive
 
         I2C reads arbitary number of bytes from a slave device. It carries out
@@ -250,9 +277,9 @@ class I2C:
         """
 
         data = []
-        self._itf_write(transmitReg,    (addr<<1)|READ_BIT)
-        self._itf_write(commandReg, CMD_START|CMD_WRITE)
-        for i in range(length-1):
+        self._itf_write(transmitReg, (addr << 1) | READ_BIT)
+        self._itf_write(commandReg, CMD_START | CMD_WRITE)
+        for i in range(length - 1):
             # The command below also gives an ACK signal from master
             # to slave because CMD_ACK is actually 0
             self._itf_write(commandReg, CMD_READ)
@@ -260,16 +287,16 @@ class I2C:
             data.append(ret)
         # The last read ends with a NACK (not acknowledge) signal and a STOP
         # from master to slave
-        self._itf_write(commandReg, CMD_READ|CMD_NACK|CMD_STOP)
+        self._itf_write(commandReg, CMD_READ | CMD_NACK | CMD_STOP)
         ret = self._itf_read(receiveReg)
         data.append(ret)
-        if length==1:
+        if length == 1:
             return data[0]
         else:
             return data
 
-    def read(self,addr, cmd=None, length=1):
-        """ I2C read
+    def read(self, addr, cmd=None, length=1):
+        """I2C read
 
         Read arbitary number of bytes from an internal address of a slave device.
         Some I2C datasheets refer to internal address as command (cmd) as well.
@@ -277,10 +304,10 @@ class I2C:
         :param addr: 7-bit integer, address of the slave device
         :param cmd: a byte of a list of bytes, the internal address of the slave device
         :param length: non-negative integer, the number of bytes to read
-        
+
         The return is a byte when length==1, or a list of bytes otherwise.
 
-        .. code-block:: python 
+        .. code-block:: python
 
             read(0x40)  # Read a byte from the slave device at 0x40, without
                         # specifying an internal address
@@ -293,22 +320,22 @@ class I2C:
 
         """
 
-        if not isinstance(cmd, int) and cmd!=None and not isinstance(cmd, list):
+        if not isinstance(cmd, int) and cmd != None and not isinstance(cmd, list):
             raise ValueError("Invalid parameter")
         elif isinstance(cmd, list):
-            if not all(isinstance(c,int) for c in cmd) or cmd==[]:
+            if not all(isinstance(c, int) for c in cmd) or cmd == []:
                 raise ValueError("Invalid parameter")
 
         # retry a few times on failure
-        for i in range(self._retry+1):
+        for i in range(self._retry + 1):
 
             try:
 
-                if cmd==None:
-                    return self._read(addr,length)
+                if cmd == None:
+                    return self._read(addr, length)
                 else:
-                    self._write(addr,cmd)
-                    return self._read(addr,length)
+                    self._write(addr, cmd)
+                    return self._read(addr, length)
 
             except Exception as error:
 
@@ -318,8 +345,8 @@ class I2C:
                     self._reset_bus()
                     continue
 
-    def write(self,addr,cmd=None, data=None):
-        """ 
+    def write(self, addr, cmd=None, data=None):
+        """
         I2C write
 
         Write arbitary number of bytes to an internal address of a slave device.
@@ -340,34 +367,33 @@ class I2C:
                                             # of the slave at 0x40
         """
 
-        if not isinstance(cmd, int) and cmd!=None and not isinstance(cmd,list):
+        if not isinstance(cmd, int) and cmd != None and not isinstance(cmd, list):
             raise ValueError("Invalid parameter")
         elif isinstance(cmd, list):
-            if not all(isinstance(c,int) for c in cmd) or cmd==[]:
+            if not all(isinstance(c, int) for c in cmd) or cmd == []:
                 raise ValueError("Invalid parameter")
         elif isinstance(cmd, int):
             cmd = [cmd]
 
-        if not isinstance(data, int) and data!=None and not isinstance(data,list):
+        if not isinstance(data, int) and data != None and not isinstance(data, list):
             raise ValueError("Invalid parameter")
         elif isinstance(data, list):
-            if not all(isinstance(d,int) for d in data) or data==[]:
+            if not all(isinstance(d, int) for d in data) or data == []:
                 raise ValueError("Invalid parameter")
         elif isinstance(data, int):
             data = [data]
 
-
         # retry a few times on failure
-        for i in range(self._retry+1):
+        for i in range(self._retry + 1):
 
             try:
 
-                if cmd==None and data!=None:
-                    self._write(addr,data)
-                elif cmd!=None and data==None:
-                    self._write(addr,cmd)
-                elif cmd!=None and data!=None:
-                    self._write(addr,cmd+data)
+                if cmd == None and data != None:
+                    self._write(addr, data)
+                elif cmd != None and data == None:
+                    self._write(addr, cmd)
+                elif cmd != None and data != None:
+                    self._write(addr, cmd + data)
                 else:
                     raise ValueError("Invalid parameter")
                 return 0
@@ -380,9 +406,8 @@ class I2C:
                     self._reset_bus()
                     continue
 
-    def _probe(self,addr):
-        """ Test if a device with addr is present on the I2C bus by just reading it
-        """
+    def _probe(self, addr):
+        """Test if a device with addr is present on the I2C bus by just reading it"""
         ret = None
         try:
             ret = self.read(addr)
@@ -395,7 +420,7 @@ class I2C:
                 return False
 
     def probe(self):
-        """ Return a list of devices detected on the i2c bus. """
+        """Return a list of devices detected on the i2c bus."""
         addrs = []
         for addr in range(128):
             if self._probe(addr):
@@ -403,29 +428,30 @@ class I2C:
         return addrs
 
     def probe_nice(self):
-        """ Print a table of devices detected on the i2c bus. """
+        """Print a table of devices detected on the i2c bus."""
         import sys
-        print ('   00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15')
+
+        print("   00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15")
         for row in range(8):
-            sys.stdout.write('{}'.format(row))
+            sys.stdout.write("{}".format(row))
             sys.stdout.flush()
             for col in range(16):
                 addr = row << 4 | col
-                mark = '{:02x}'.format(addr) if self._probe(addr) else '  '
-                sys.stdout.write('  ' + mark)
+                mark = "{:02x}".format(addr) if self._probe(addr) else "  "
+                sys.stdout.write("  " + mark)
                 sys.stdout.flush()
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
             sys.stdout.flush()
 
 
 class I2C_SMBUS:
-
-    def __init__(self,devid):
+    def __init__(self, devid):
         import smbus
+
         self.bus = smbus.SMBus(devid)
 
     def _read(self, addr, length=1):
-        if length==1:
+        if length == 1:
             return self.bus.read_byte(addr)
         else:
             data = [0] * length
@@ -435,38 +461,38 @@ class I2C_SMBUS:
 
     def _write(self, addr, data):
         if len(data) == 1:
-            self.bus.write_byte(adde,data[0])
+            self.bus.write_byte(adde, data[0])
         else:
-            self.bus.write_i2c_block_data(addr,data[0],data[1:])
+            self.bus.write_i2c_block_data(addr, data[0], data[1:])
 
     def read(self, addr, cmd=None, length=1):
-        if cmd==None:
+        if cmd == None:
             return self.bus.read_byte(addr)
         else:
             if not isinstance(cmd, int):
                 raise ValueError("Invalid parameter")
-            if length==1:
-                return self.bus.read_i2c_block_data(addr,cmd,length)[0]
+            if length == 1:
+                return self.bus.read_i2c_block_data(addr, cmd, length)[0]
             else:
-                return self.bus.read_i2c_block_data(addr,cmd,length)
+                return self.bus.read_i2c_block_data(addr, cmd, length)
 
     def write(self, addr, cmd=None, data=[]):
-        if cmd==None:
-            if not isinstance(data,int):
+        if cmd == None:
+            if not isinstance(data, int):
                 raise ValueError("Invalid parameter")
-            self.bus.write_byte(addr,data)
+            self.bus.write_byte(addr, data)
         else:
-            if isinstance(data,list):
-                if len(data)==0:
+            if isinstance(data, list):
+                if len(data) == 0:
                     raise ValueError("Invalid parameter")
             else:
                 data = [data]
-            self.bus.write_i2c_block_data(addr,cmd,data)
+            self.bus.write_i2c_block_data(addr, cmd, data)
+
 
 class I2C_PIGPIO:
-
-    def __init__(self,sda,scl,baud):
-        """ 
+    def __init__(self, sda, scl, baud):
+        """
         PIGPIO based I2C
 
         I2C module powered by PIGPIO library.
@@ -479,6 +505,7 @@ class I2C_PIGPIO:
         """
 
         import pigpio
+
         self.pi = pigpio.pi()
         self.sda = sda
         self.scl = scl
@@ -487,7 +514,7 @@ class I2C_PIGPIO:
         self._close()
 
     def _open(self):
-        ret = self.pi.bb_i2c_open(self.sda,self.scl,self.baud)
+        ret = self.pi.bb_i2c_open(self.sda, self.scl, self.baud)
         if ret != 0:
             raise IOError(pigpio.error_text(ret[0]))
 
@@ -495,7 +522,7 @@ class I2C_PIGPIO:
         self.pi.bb_i2c_close(self.sda)
 
     def _read(self, addr, length=1):
-        """ 
+        """
         I2C read primitive
 
         I2C reads arbitary number of bytes from a slave device. It carries out
@@ -509,7 +536,7 @@ class I2C_PIGPIO:
 
         :param addr: 7-bit integer, address of the slave device
         :param length: non-negative integer, the number of bytes to read
-        
+
         The return is a byte when length==1, or a list of bytes otherwise
 
         .. code-block:: python
@@ -524,12 +551,13 @@ class I2C_PIGPIO:
 
         try:
             self._open()
-            ret = self.pi.bb_i2c_zip(self.sda,cmd)
+            ret = self.pi.bb_i2c_zip(self.sda, cmd)
         finally:
             self._close()
 
         if ret[0] < 0:
             import pigpio
+
             raise IOError(pigpio.error_text(ret[0]))
         elif length == 1:
             return ret[1][0]
@@ -537,7 +565,7 @@ class I2C_PIGPIO:
             return list(ret[1])
 
     def _write(self, addr, data):
-        """ 
+        """
         I2C write primitive
 
         I2C writes arbitary number of bytes to a slave device, It carries out
@@ -556,25 +584,26 @@ class I2C_PIGPIO:
             _write(0x20,range(10))  # Write [0..9] to a slave at address 0x20
         """
 
-        if isinstance(data,list):
+        if isinstance(data, list):
             cmd = [4, addr, 2, 7, len(data)] + data + [3, 0]
-        elif isinstance(data,int):
+        elif isinstance(data, int):
             cmd = [4, addr, 2, 7, 1, data, 3, 0]
         else:
             raise ValueError("Invalid parameter")
 
         try:
             self._open()
-            ret = self.pi.bb_i2c_zip(self.sda,cmd)
+            ret = self.pi.bb_i2c_zip(self.sda, cmd)
         finally:
             self._close()
 
         if ret[0] != 0:
             import pigpio
+
             raise IOError(pigpio.error_text(ret[0]))
 
     def read(self, addr, cmd=None, length=1):
-        """ 
+        """
         I2C read
 
         Read arbitary number of bytes from an internal address of a slave device.
@@ -583,7 +612,7 @@ class I2C_PIGPIO:
         :param addr: 7-bit integer, address of the slave device
         :param cmd: a byte of a list of bytes, the internal address of the slave device
         :param length: non-negative integer, the number of bytes to read
-        
+
         The return is a byte when length==1, or a list of bytes otherwise.
 
         .. code-block:: python
@@ -598,30 +627,30 @@ class I2C_PIGPIO:
                                         # of the slave at 0x40
         """
 
-        if not isinstance(cmd, int) and cmd!=None and not isinstance(cmd, list):
+        if not isinstance(cmd, int) and cmd != None and not isinstance(cmd, list):
             raise ValueError("Invalid parameter")
         elif isinstance(cmd, list):
-            if not all(isinstance(c,int) for c in cmd) or cmd==[]:
+            if not all(isinstance(c, int) for c in cmd) or cmd == []:
                 raise ValueError("Invalid parameter")
 
-        if cmd!=None:
-            self._write(addr,cmd)
+        if cmd != None:
+            self._write(addr, cmd)
 
         if length == 1:
-            return self._read(addr,length)
+            return self._read(addr, length)
         else:
             data = []
             while length > 255:
-                data += self._read(addr,255)
+                data += self._read(addr, 255)
                 length -= 255
             if length > 1:
-                data += self._read(addr,length)
+                data += self._read(addr, length)
             else:
-                data += [self._read(addr,length)]
+                data += [self._read(addr, length)]
             return data
 
     def write(self, addr, cmd=None, data=None):
-        """ 
+        """
         I2C write
 
         Write arbitary number of bytes to an internal address of a slave device.
@@ -643,36 +672,35 @@ class I2C_PIGPIO:
                                             # of the slave at 0x40
         """
 
-        if not isinstance(cmd, int) and cmd!=None and not isinstance(cmd,list):
+        if not isinstance(cmd, int) and cmd != None and not isinstance(cmd, list):
             raise ValueError("Invalid parameter")
         elif isinstance(cmd, list):
-            if not all(isinstance(c,int) for c in cmd) or cmd==[]:
+            if not all(isinstance(c, int) for c in cmd) or cmd == []:
                 raise ValueError("Invalid parameter")
         elif isinstance(cmd, int):
             cmd = [cmd]
 
-        if not isinstance(data, int) and data!=None and not isinstance(data,list):
+        if not isinstance(data, int) and data != None and not isinstance(data, list):
             raise ValueError("Invalid parameter")
         elif isinstance(data, list):
-            if not all(isinstance(d,int) for d in data) or data==[]:
+            if not all(isinstance(d, int) for d in data) or data == []:
                 raise ValueError("Invalid parameter")
         elif isinstance(data, int):
             data = [data]
 
-        if cmd==None and data!=None:
-            self._write(addr,data)
-        elif cmd!=None and data==None:
-            self._write(addr,cmd)
-        elif cmd!=None and data!=None:
-            self._write(addr,cmd+data)
+        if cmd == None and data != None:
+            self._write(addr, data)
+        elif cmd != None and data == None:
+            self._write(addr, cmd)
+        elif cmd != None and data != None:
+            self._write(addr, cmd + data)
         else:
             raise ValueError("Invalid parameter")
 
         return 0
 
-    def _probe(self,addr):
-        """ Test if a device with addr is present on the I2C bus by just reading it
-        """
+    def _probe(self, addr):
+        """Test if a device with addr is present on the I2C bus by just reading it"""
         ret = None
         try:
             ret = self.read(addr)
@@ -686,33 +714,35 @@ class I2C_PIGPIO:
 
     def probe(self):
         import sys
-        print ('   00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15')
+
+        print("   00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15")
         for row in range(8):
-            sys.stdout.write('{}'.format(row))
+            sys.stdout.write("{}".format(row))
             sys.stdout.flush()
             for col in range(16):
                 addr = row << 4 | col
-                mark = '{:02x}'.format(addr) if self._probe(addr) else '  '
-                sys.stdout.write('  ' + mark)
+                mark = "{:02x}".format(addr) if self._probe(addr) else "  "
+                sys.stdout.write("  " + mark)
                 sys.stdout.flush()
-            sys.stdout.write('\n')
+            sys.stdout.write("\n")
             sys.stdout.flush()
 
+
 class I2C_DEVICE(object):
-    """ I2C device base class """
+    """I2C device base class"""
 
     DICT = dict()
 
     def __init__(self, itf, addr, logger=None, **kwargs):
-        self.itf=itf
-        self.addr=addr
-        #obj = __name__ + '({}:{}:0x{:02x})'.format(itf.fpga.host, itf.controller_name, addr)
-        #self.logger = logger or helpers.add_default_log_handlers(logging.getLogger(obj))
+        self.itf = itf
+        self.addr = addr
+        # obj = __name__ + '({}:{}:0x{:02x})'.format(itf.fpga.host, itf.controller_name, addr)
+        # self.logger = logger or helpers.add_default_log_handlers(logging.getLogger(obj))
 
         self._retry = 3
         if kwargs is not None:
-            if 'retry' in kwargs:
-                self._retry = int(kwargs['retry'])
+            if "retry" in kwargs:
+                self._retry = int(kwargs["retry"])
 
     def _set(self, d1, d2, mask=None):
         # Update some bits of d1 with d2, while keep other bits unchanged
@@ -729,34 +759,36 @@ class I2C_DEVICE(object):
         for rid in dicts:
             if name in dicts[rid]:
                 return rid, dicts[rid][name]
-        return None,None
+        return None, None
 
-    def write(self,reg=None,data=None):
-        self.itf.write(self.addr,reg,data)
+    def write(self, reg=None, data=None):
+        self.itf.write(self.addr, reg, data)
 
-    def read(self,reg=None,length=1):
-        return self.itf.read(self.addr,reg,length)
+    def read(self, reg=None, length=1):
+        return self.itf.read(self.addr, reg, length)
 
-    def getRegister(self,rid=None):
-        if rid==None:
-            return dict([(regId,self.getRegister(regId)) for regId in self.DICT])
+    def getRegister(self, rid=None):
+        if rid == None:
+            return dict([(regId, self.getRegister(regId)) for regId in self.DICT])
         elif rid in self.DICT:
             rval = self.read(rid)
-            return {name: self._get(rval,mask) for name, mask in self.DICT[rid].items()}
+            return {
+                name: self._get(rval, mask) for name, mask in self.DICT[rid].items()
+            }
         else:
-            logger.error('Invalid parameter')
+            logger.error("Invalid parameter")
             raise ValueError("Invalid parameter")
 
-    def getWord(self,name):
+    def getWord(self, name):
         rid, mask = self._getMask(self.DICT, name)
-        return self._get(self.read(rid),mask)
+        return self._get(self.read(rid), mask)
 
-    def setWord(self,name,value):
+    def setWord(self, name, value):
         rid, mask = self._getMask(self.DICT, name)
-        if mask == 0xff:
-            data = self._set(0x0,value,mask)
-            self.write(rid,data)
+        if mask == 0xFF:
+            data = self._set(0x0, value, mask)
+            self.write(rid, data)
         else:
             data = self.read(rid)
-            data = self._set(data,value,mask)
-            self.write(rid,data)
+            data = self._set(data, value, mask)
+            self.write(rid, data)

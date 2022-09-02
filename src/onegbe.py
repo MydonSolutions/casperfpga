@@ -8,78 +8,80 @@ from .gbe import Gbe
 LOGGER = logging.getLogger(__name__)
 
 # Offsets for fields in the memory map, in bytes
-OFFSET_CORE_TYPE   = 0x0
+OFFSET_CORE_TYPE = 0x0
 OFFSET_BUFFER_SIZE = 0x4
-OFFSET_WORD_LEN    = 0x8
-OFFSET_MAC_ADDR    = 0xc
-OFFSET_IP_ADDR     = 0x14
-OFFSET_GW_ADDR     = 0x18
-OFFSET_NETMASK     = 0x1c
-OFFSET_MC_IP       = 0x20
-OFFSET_MC_MASK     = 0x24
-OFFSET_BUF_VLD     = 0x28
-OFFSET_FLAGS       = 0x2c
-OFFSET_PORT        = 0x30
-OFFSET_STATUS      = 0x34
-OFFSET_CONTROL     = 0x40
-OFFSET_ARP_SIZE    = 0x44
+OFFSET_WORD_LEN = 0x8
+OFFSET_MAC_ADDR = 0xC
+OFFSET_IP_ADDR = 0x14
+OFFSET_GW_ADDR = 0x18
+OFFSET_NETMASK = 0x1C
+OFFSET_MC_IP = 0x20
+OFFSET_MC_MASK = 0x24
+OFFSET_BUF_VLD = 0x28
+OFFSET_FLAGS = 0x2C
+OFFSET_PORT = 0x30
+OFFSET_STATUS = 0x34
+OFFSET_CONTROL = 0x40
+OFFSET_ARP_SIZE = 0x44
 OFFSET_TX_PKT_RATE = 0x48
-OFFSET_TX_PKT_CNT  = 0x4c
+OFFSET_TX_PKT_CNT = 0x4C
 OFFSET_TX_VLD_RATE = 0x50
-OFFSET_TX_VLD_CNT  = 0x54
-OFFSET_TX_OF_CNT   = 0x58
-OFFSET_TX_AF_CNT   = 0x5c
+OFFSET_TX_VLD_CNT = 0x54
+OFFSET_TX_OF_CNT = 0x58
+OFFSET_TX_AF_CNT = 0x5C
 OFFSET_RX_PKT_RATE = 0x60
-OFFSET_RX_PKT_CNT  = 0x64
+OFFSET_RX_PKT_CNT = 0x64
 OFFSET_RX_VLD_RATE = 0x68
-OFFSET_RX_VLD_CNT  = 0x6c
-OFFSET_RX_OF_CNT   = 0x70
-OFFSET_RX_AF_CNT   = 0x74
-OFFSET_COUNT_RST   = 0x78
+OFFSET_RX_VLD_CNT = 0x6C
+OFFSET_RX_OF_CNT = 0x70
+OFFSET_RX_AF_CNT = 0x74
+OFFSET_COUNT_RST = 0x78
 
-OFFSET_ARP_CACHE   = 0x1000
-OFFSET_TX_BUFFER   = 0x4000
-OFFSET_RX_BUFFER   = 0x8000
+OFFSET_ARP_CACHE = 0x1000
+OFFSET_TX_BUFFER = 0x4000
+OFFSET_RX_BUFFER = 0x8000
 
 # Sizes for fields in the memory map, in bytes
-SIZE_CORE_TYPE   = 0x4
+SIZE_CORE_TYPE = 0x4
 SIZE_BUFFER_SIZE = 0x4
-SIZE_WORD_LEN    = 0x4
-SIZE_MAC_ADDR    = 0x8
-SIZE_IP_ADDR     = 0x4
-SIZE_GW_ADDR     = 0x4
-SIZE_NETMASK     = 0x4
-SIZE_MC_IP       = 0x4
-SIZE_MC_MASK     = 0x4
-SIZE_BUF_AVAIL   = 0x4
-SIZE_FLAGS       = 0x4
-SIZE_PORT        = 0x4
-SIZE_STATUS      = 0x8
-SIZE_CONTROL     = 0x8
-SIZE_ARP_SIZE    = 0x4
+SIZE_WORD_LEN = 0x4
+SIZE_MAC_ADDR = 0x8
+SIZE_IP_ADDR = 0x4
+SIZE_GW_ADDR = 0x4
+SIZE_NETMASK = 0x4
+SIZE_MC_IP = 0x4
+SIZE_MC_MASK = 0x4
+SIZE_BUF_AVAIL = 0x4
+SIZE_FLAGS = 0x4
+SIZE_PORT = 0x4
+SIZE_STATUS = 0x8
+SIZE_CONTROL = 0x8
+SIZE_ARP_SIZE = 0x4
 SIZE_TX_PKT_RATE = 0x4
-SIZE_TX_PKT_CNT  = 0x4
+SIZE_TX_PKT_CNT = 0x4
 SIZE_TX_VLD_RATE = 0x4
-SIZE_TX_VLD_CNT  = 0x4
-SIZE_TX_OF_CNT   = 0x4
-SIZE_TX_AF_CNT   = 0x4
+SIZE_TX_VLD_CNT = 0x4
+SIZE_TX_OF_CNT = 0x4
+SIZE_TX_AF_CNT = 0x4
 SIZE_RX_PKT_RATE = 0x4
-SIZE_RX_PKT_CNT  = 0x4
+SIZE_RX_PKT_CNT = 0x4
 SIZE_RX_VLD_RATE = 0x4
-SIZE_RX_VLD_CNT  = 0x4
-SIZE_RX_OF_CNT   = 0x4
-SIZE_RX_AF_CNT   = 0x4
-SIZE_COUNT_RST   = 0x4
+SIZE_RX_VLD_CNT = 0x4
+SIZE_RX_OF_CNT = 0x4
+SIZE_RX_AF_CNT = 0x4
+SIZE_COUNT_RST = 0x4
 
-SIZE_ARP_CACHE   = 0x3000
-SIZE_TX_BUFFER   = 0x4000
-SIZE_RX_BUFFER   = 0x4000
+SIZE_ARP_CACHE = 0x3000
+SIZE_TX_BUFFER = 0x4000
+SIZE_RX_BUFFER = 0x4000
+
 
 class OneGbe(Memory, Gbe):
     """
     To do with the CASPER ten GBE yellow block implemented on FPGAs,
     and interfaced-to via KATCP memory reads/writes.
     """
+
     def __init__(self, parent, name, address, length_bytes, device_info=None):
         """
 
@@ -95,15 +97,15 @@ class OneGbe(Memory, Gbe):
 
     @property
     def mac(self):
-        return self.get_gbe_core_details()['mac']
+        return self.get_gbe_core_details()["mac"]
 
     @property
     def ip_address(self):
-        return self.get_gbe_core_details()['ip']
+        return self.get_gbe_core_details()["ip"]
 
     @property
     def port(self):
-        return self.get_gbe_core_details()['fabric_port']
+        return self.get_gbe_core_details()["fabric_port"]
 
     def _check_memmap_compliance(self):
         """
@@ -114,7 +116,7 @@ class OneGbe(Memory, Gbe):
         stored in register 0, it should be OK).
         """
         x = self.parent.read(self.name, 4)
-        cpu_tx_en, cpu_rx_en, rev, core_type = struct.unpack('4B', x)
+        cpu_tx_en, cpu_rx_en, rev, core_type = struct.unpack("4B", x)
         if (cpu_tx_en > 1) or (cpu_rx_en > 1) or (core_type != 2):
             return False
         else:
@@ -127,17 +129,19 @@ class OneGbe(Memory, Gbe):
         :param raw_device_info: info about this block that may be useful
         """
         super(TenGbe, self).post_create_update(raw_device_info)
-        self.snaps = {'tx': None, 'rx': None}
+        self.snaps = {"tx": None, "rx": None}
         for snapshot in self.parent.snapshots:
-            if snapshot.name.find(self.name + '_') == 0:
-                name = snapshot.name.replace(self.name + '_', '')
-                if name == 'txs_ss':
-                    self.snaps['tx'] = snapshot.name
-                elif name == 'rxs_ss':
-                    self.snaps['rx'] = snapshot.name
+            if snapshot.name.find(self.name + "_") == 0:
+                name = snapshot.name.replace(self.name + "_", "")
+                if name == "txs_ss":
+                    self.snaps["tx"] = snapshot.name
+                elif name == "rxs_ss":
+                    self.snaps["rx"] = snapshot.name
                 else:
-                    errmsg = '%s: incorrect snap %s under tengbe ' \
-                             'block' % (self.fullname, snapshot.name)
+                    errmsg = "%s: incorrect snap %s under tengbe " "block" % (
+                        self.fullname,
+                        snapshot.name,
+                    )
                     LOGGER.error(errmsg)
                     raise RuntimeError(errmsg)
 
@@ -145,13 +149,13 @@ class OneGbe(Memory, Gbe):
         """
         Read the TX snapshot embedded in this TenGBE yellow block
         """
-        return self.snaps['tx'].read(timeout=10)['data']
+        return self.snaps["tx"].read(timeout=10)["data"]
 
     def read_rxsnap(self):
         """
         Read the RX snapshot embedded in this TenGBE yellow block
         """
-        return self.snaps['rx'].read(timeout=10)['data']
+        return self.snaps["rx"].read(timeout=10)["data"]
 
     # def fabric_start(self):
     #    """
@@ -174,37 +178,50 @@ class OneGbe(Memory, Gbe):
         """
         Configure this interface, then start a DHCP client on ALL interfaces.
         """
-        #if self.mac is None:
-            # TODO get MAC from EEPROM serial number and assign here
-            # self.mac = '0'
+        # if self.mac is None:
+        # TODO get MAC from EEPROM serial number and assign here
+        # self.mac = '0'
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-start', request_timeout=5,
+            name="tap-start",
+            request_timeout=5,
             require_ok=True,
-            request_args=(self.name, self.name, '0.0.0.0',
-                          str(self.port), str(self.mac), ))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure starting tap driver.' % self.name)
+            request_args=(
+                self.name,
+                self.name,
+                "0.0.0.0",
+                str(self.port),
+                str(self.mac),
+            ),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure starting tap driver." % self.name)
 
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-arp-config', request_timeout=1,
+            name="tap-arp-config",
+            request_timeout=1,
             require_ok=True,
-            request_args=(self.name, 'mode', '0'))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure disabling ARP.' % self.name)
+            request_args=(self.name, "mode", "0"),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure disabling ARP." % self.name)
 
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-dhcp', request_timeout=30,
+            name="tap-dhcp",
+            request_timeout=30,
             require_ok=True,
-            request_args=(self.name, ))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure starting DHCP client.' % self.name)
+            request_args=(self.name,),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure starting DHCP client." % self.name)
 
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-arp-config', request_timeout=1,
+            name="tap-arp-config",
+            request_timeout=1,
             require_ok=True,
-            request_args=(self.name, 'mode', '-1'))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure re-enabling ARP.' % self.name)
+            request_args=(self.name, "mode", "-1"),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure re-enabling ARP." % self.name)
         # it looks like the command completed without error, so
         # update the basic core details
         self.get_gbe_core_details()
@@ -216,21 +233,30 @@ class OneGbe(Memory, Gbe):
         :param restart: stop before starting
         """
         if len(self.name) > 8:
-            raise NameError('%s: tap device identifier must be shorter than 9 '
-                            'characters..' % self.fullname)
+            raise NameError(
+                "%s: tap device identifier must be shorter than 9 "
+                "characters.." % self.fullname
+            )
         if restart:
             self.tap_stop()
         if self.tap_running():
-            LOGGER.info('%s: tap already running.' % self.fullname)
+            LOGGER.info("%s: tap already running." % self.fullname)
             return
-        LOGGER.info('%s: starting tap driver.' % self.fullname)
+        LOGGER.info("%s: starting tap driver." % self.fullname)
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-start', request_timeout=-1, require_ok=True,
-            request_args=(self.name, self.name, str(self.ip_address),
-                          str(self.port), str(self.mac), ))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure starting tap driver.' %
-                               self.fullname)
+            name="tap-start",
+            request_timeout=-1,
+            require_ok=True,
+            request_args=(
+                self.name,
+                self.name,
+                str(self.ip_address),
+                str(self.port),
+                str(self.mac),
+            ),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure starting tap driver." % self.fullname)
 
     def tap_stop(self):
         """
@@ -238,13 +264,15 @@ class OneGbe(Memory, Gbe):
         """
         if not self.tap_running():
             return
-        LOGGER.info('%s: stopping tap driver.' % self.fullname)
+        LOGGER.info("%s: stopping tap driver." % self.fullname)
         reply, _ = self.parent.transport.katcprequest(
-            name='tap-stop', request_timeout=-1,
-            require_ok=True, request_args=(self.name, ))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('%s: failure stopping tap '
-                               'device.' % self.fullname)
+            name="tap-stop",
+            request_timeout=-1,
+            require_ok=True,
+            request_args=(self.name,),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError("%s: failure stopping tap " "device." % self.fullname)
 
     def tap_info(self):
         """
@@ -257,18 +285,19 @@ class OneGbe(Memory, Gbe):
 
         self.parent.unhandled_inform_handler = handle_inform
         _, informs = self.parent.transport.katcprequest(
-            name='tap-info', request_timeout=-1,
-            require_ok=False, request_args=(self.name, ))
+            name="tap-info",
+            request_timeout=-1,
+            require_ok=False,
+            request_args=(self.name,),
+        )
         self.parent.unhandled_inform_handler = None
         # process the tap-info
         if len(informs) == 1:
-            return {'name': informs[0].arguments[0],
-                    'ip': informs[0].arguments[1]}
+            return {"name": informs[0].arguments[0], "ip": informs[0].arguments[1]}
         elif len(informs) == 0:
-            return {'name': '', 'ip': ''}
+            return {"name": "", "ip": ""}
         else:
-            raise RuntimeError('%s: invalid return from tap-info?' %
-                               self.fullname)
+            raise RuntimeError("%s: invalid return from tap-info?" % self.fullname)
         # TODO - this request should return okay if the tap isn't
         # running - it shouldn't fail
         # if reply.arguments[0] != 'ok':
@@ -281,7 +310,7 @@ class OneGbe(Memory, Gbe):
         ten GBE interface.
         """
         tapinfo = self.tap_info()
-        if tapinfo['name'] == '':
+        if tapinfo["name"] == "":
             return False
         return True
 
@@ -290,11 +319,15 @@ class OneGbe(Memory, Gbe):
         Have the tap driver reload its ARP table right now.
         """
         reply, _ = self.parent.transport.katcprequest(
-            name="tap-arp-reload", request_timeout=-1,
-            require_ok=True, request_args=(self.name, ))
-        if reply.arguments[0] != 'ok':
-            raise RuntimeError('Failure requesting ARP reload for tap '
-                               'device %s.' % str(self))
+            name="tap-arp-reload",
+            request_timeout=-1,
+            require_ok=True,
+            request_args=(self.name,),
+        )
+        if reply.arguments[0] != "ok":
+            raise RuntimeError(
+                "Failure requesting ARP reload for tap " "device %s." % str(self)
+            )
 
     def multicast_receive(self, ip_str, group_size):
         """
@@ -313,16 +346,24 @@ class OneGbe(Memory, Gbe):
         # mcast_group_string = ip_str + '+' + str(group_size)
         mcast_group_string = ip_str
         reply, _ = self.parent.transport.katcprequest(
-            'tap-multicast-add', -1, True, request_args=(self.name, 'recv',
-                                                         mcast_group_string, ))
-        if reply.arguments[0] == 'ok':
+            "tap-multicast-add",
+            -1,
+            True,
+            request_args=(
+                self.name,
+                "recv",
+                mcast_group_string,
+            ),
+        )
+        if reply.arguments[0] == "ok":
             if mcast_group_string not in self.multicast_subscriptions:
                 self.multicast_subscriptions.append(mcast_group_string)
             return
         else:
-            raise RuntimeError('%s: failed adding multicast receive %s to '
-                               'tap device.' % (self.fullname,
-                                                mcast_group_string))
+            raise RuntimeError(
+                "%s: failed adding multicast receive %s to "
+                "tap device." % (self.fullname, mcast_group_string)
+            )
 
     def multicast_remove(self, ip_str):
         """
@@ -333,24 +374,33 @@ class OneGbe(Memory, Gbe):
         """
         try:
             reply, _ = self.parent.transport.katcprequest(
-                'tap-multicast-remove', -1, True,
-                request_args=(self.name, IpAddress.str2ip(ip_str), ))
+                "tap-multicast-remove",
+                -1,
+                True,
+                request_args=(
+                    self.name,
+                    IpAddress.str2ip(ip_str),
+                ),
+            )
         except:
-            raise RuntimeError('%s: tap-multicast-remove does not seem to '
-                               'be supported on %s' % (self.fullname,
-                                                       self.parent.host))
-        if reply.arguments[0] == 'ok':
+            raise RuntimeError(
+                "%s: tap-multicast-remove does not seem to "
+                "be supported on %s" % (self.fullname, self.parent.host)
+            )
+        if reply.arguments[0] == "ok":
             if ip_str not in self.multicast_subscriptions:
                 LOGGER.warning(
-                    '%s: That is odd, %s removed from mcast subscriptions, but '
-                    'it was not in its list of sbscribed addresses.' % (
-                        self.fullname, ip_str))
+                    "%s: That is odd, %s removed from mcast subscriptions, but "
+                    "it was not in its list of sbscribed addresses."
+                    % (self.fullname, ip_str)
+                )
                 self.multicast_subscriptions.remove(ip_str)
             return
         else:
-            raise RuntimeError('%s: failed removing multicast address %s '
-                               'from tap device' % (self.fullname,
-                                                    IpAddress.str2ip(ip_str)))
+            raise RuntimeError(
+                "%s: failed removing multicast address %s "
+                "from tap device" % (self.fullname, IpAddress.str2ip(ip_str))
+            )
 
     def _fabric_enable_disable(self, target_val):
         """
@@ -359,20 +409,22 @@ class OneGbe(Memory, Gbe):
         """
         if self.memmap_compliant:
             word_bytes = list(
-                struct.unpack('>4B', self.parent.read(self.name, 4, OFFSET_FLAGS)))
+                struct.unpack(">4B", self.parent.read(self.name, 4, OFFSET_FLAGS))
+            )
             if word_bytes[0] == target_val:
                 return
             word_bytes[0] = target_val
-            word_packed = struct.pack('>4B', *word_bytes)
+            word_packed = struct.pack(">4B", *word_bytes)
             self.parent.write(self.name, word_packed, OFFSET_FLAGS)
         else:
             # 0x20 or (0x20 / 4)? What was the /4 for?
             word_bytes = list(
-                struct.unpack('>4B', self.parent.read(self.name, 4, 0x20)))
+                struct.unpack(">4B", self.parent.read(self.name, 4, 0x20))
+            )
             if word_bytes[1] == target_val:
                 return
             word_bytes[1] = target_val
-            word_packed = struct.pack('>4B', *word_bytes)
+            word_packed = struct.pack(">4B", *word_bytes)
             self.parent.write(self.name, word_packed, 0x20)
 
     def fabric_enable(self):
@@ -392,31 +444,35 @@ class OneGbe(Memory, Gbe):
         Toggle the fabric soft reset
         """
         if self.memmap_compliant:
-            word_bytes = struct.unpack('>4B', self.parent.read(self.name, 4, OFFSET_FLAGS))
+            word_bytes = struct.unpack(
+                ">4B", self.parent.read(self.name, 4, OFFSET_FLAGS)
+            )
             word_bytes = list(word_bytes)
 
             def write_val(val):
                 word_bytes[2] = val
-                word_packed = struct.pack('>4B', *word_bytes)
+                word_packed = struct.pack(">4B", *word_bytes)
                 if val == 0:
                     self.parent.write(self.name, word_packed, OFFSET_FLAGS)
                 else:
                     self.parent.blindwrite(self.name, word_packed, OFFSET_FLAGS)
+
             if word_bytes[2] == 1:
                 write_val(0)
             write_val(1)
             write_val(0)
         else:
-            word_bytes = struct.unpack('>4B', self.parent.read(self.name, 4, 0x20))
+            word_bytes = struct.unpack(">4B", self.parent.read(self.name, 4, 0x20))
             word_bytes = list(word_bytes)
 
             def write_val(val):
                 word_bytes[0] = val
-                word_packed = struct.pack('>4B', *word_bytes)
+                word_packed = struct.pack(">4B", *word_bytes)
                 if val == 0:
                     self.parent.write(self.name, word_packed, 0x20)
                 else:
                     self.parent.blindwrite(self.name, word_packed, 0x20)
+
             if word_bytes[0] == 1:
                 write_val(0)
             write_val(1)
@@ -488,56 +544,94 @@ class OneGbe(Memory, Gbe):
         """
         if self.memmap_compliant:
             data = self.parent.read(self.name, 16384)
-            data = list(struct.unpack('>16384B', data))
+            data = list(struct.unpack(">16384B", data))
             returnval = {
-                'ip_prefix': '%i.%i.%i.' % (data[0x14], data[0x15], data[0x16]),
-                'ip': IpAddress('%i.%i.%i.%i' % (data[0x14], data[0x15], 
-                                                 data[0x16], data[0x17])),
-                'subnet_mask': IpAddress('%i.%i.%i.%i' % (
-                                  data[0x1c], data[0x1d], data[0x1e], data[0x1f])),
-                'mac': Mac('%i:%i:%i:%i:%i:%i' % (data[0x0e], data[0x0f],
-                                                  data[0x10], data[0x11],
-                                                  data[0x12], data[0x13])),
-                'gateway_ip': IpAddress('%i.%i.%i.%i' % (data[0x18], data[0x19],
-                                                         data[0x1a], data[0x1b])),
-                'fabric_port': ((data[0x32] << 8) + (data[0x33])),
-                'fabric_en': bool(data[0x2f] & 1),
-                'multicast': {'base_ip': IpAddress('%i.%i.%i.%i' % (
-                    data[0x20], data[0x21], data[0x22], data[0x23])),
-                              'ip_mask': IpAddress('%i.%i.%i.%i' % (
-                                  data[0x24], data[0x25], data[0x26], data[0x27])),
-                              'rx_ips': []}
+                "ip_prefix": "%i.%i.%i." % (data[0x14], data[0x15], data[0x16]),
+                "ip": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x14], data[0x15], data[0x16], data[0x17])
+                ),
+                "subnet_mask": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x1C], data[0x1D], data[0x1E], data[0x1F])
+                ),
+                "mac": Mac(
+                    "%i:%i:%i:%i:%i:%i"
+                    % (
+                        data[0x0E],
+                        data[0x0F],
+                        data[0x10],
+                        data[0x11],
+                        data[0x12],
+                        data[0x13],
+                    )
+                ),
+                "gateway_ip": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x18], data[0x19], data[0x1A], data[0x1B])
+                ),
+                "fabric_port": ((data[0x32] << 8) + (data[0x33])),
+                "fabric_en": bool(data[0x2F] & 1),
+                "multicast": {
+                    "base_ip": IpAddress(
+                        "%i.%i.%i.%i" % (data[0x20], data[0x21], data[0x22], data[0x23])
+                    ),
+                    "ip_mask": IpAddress(
+                        "%i.%i.%i.%i" % (data[0x24], data[0x25], data[0x26], data[0x27])
+                    ),
+                    "rx_ips": [],
+                },
             }
         else:
             data = self.parent.read(self.name, 16384)
-            data = list(struct.unpack('>16384B', data))
+            data = list(struct.unpack(">16384B", data))
             returnval = {
-                'ip_prefix': '%i.%i.%i.' % (data[0x10], data[0x11], data[0x12]),
-                'ip': IpAddress('%i.%i.%i.%i' % (data[0x10], data[0x11], 
-                                                 data[0x12], data[0x13])),
-                'subnet_mask': IpAddress('%i.%i.%i.%i' % (
-                                  data[0x38], data[0x39], data[0x3a], data[0x3b])),
-                'mac': Mac('%i:%i:%i:%i:%i:%i' % (data[0x02], data[0x03],
-                                                  data[0x04], data[0x05],
-                                                  data[0x06], data[0x07])),
-                'gateway_ip': IpAddress('%i.%i.%i.%i' % (data[0x0c], data[0x0d],
-                                                         data[0x0e], data[0x0f])),
-                'fabric_port': ((data[0x22] << 8) + (data[0x23])),
-                'fabric_en': bool(data[0x21] & 1),
-                'xaui_lane_sync': [bool(data[0x27] & 4), bool(data[0x27] & 8),
-                                   bool(data[0x27] & 16), bool(data[0x27] & 32)],
-                'xaui_status': [data[0x24], data[0x25], data[0x26], data[0x27]],
-                'xaui_chan_bond': bool(data[0x27] & 64),
-                'xaui_phy': {'rx_eq_mix': data[0x28], 'rx_eq_pol': data[0x29],
-                             'tx_preemph': data[0x2a], 'tx_swing': data[0x2b]},
-                'multicast': {'base_ip': IpAddress('%i.%i.%i.%i' % (
-                    data[0x30], data[0x31], data[0x32], data[0x33])),
-                              'ip_mask': IpAddress('%i.%i.%i.%i' % (
-                                  data[0x34], data[0x35], data[0x36], data[0x37])),
-                              'rx_ips': []}
+                "ip_prefix": "%i.%i.%i." % (data[0x10], data[0x11], data[0x12]),
+                "ip": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x10], data[0x11], data[0x12], data[0x13])
+                ),
+                "subnet_mask": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x38], data[0x39], data[0x3A], data[0x3B])
+                ),
+                "mac": Mac(
+                    "%i:%i:%i:%i:%i:%i"
+                    % (
+                        data[0x02],
+                        data[0x03],
+                        data[0x04],
+                        data[0x05],
+                        data[0x06],
+                        data[0x07],
+                    )
+                ),
+                "gateway_ip": IpAddress(
+                    "%i.%i.%i.%i" % (data[0x0C], data[0x0D], data[0x0E], data[0x0F])
+                ),
+                "fabric_port": ((data[0x22] << 8) + (data[0x23])),
+                "fabric_en": bool(data[0x21] & 1),
+                "xaui_lane_sync": [
+                    bool(data[0x27] & 4),
+                    bool(data[0x27] & 8),
+                    bool(data[0x27] & 16),
+                    bool(data[0x27] & 32),
+                ],
+                "xaui_status": [data[0x24], data[0x25], data[0x26], data[0x27]],
+                "xaui_chan_bond": bool(data[0x27] & 64),
+                "xaui_phy": {
+                    "rx_eq_mix": data[0x28],
+                    "rx_eq_pol": data[0x29],
+                    "tx_preemph": data[0x2A],
+                    "tx_swing": data[0x2B],
+                },
+                "multicast": {
+                    "base_ip": IpAddress(
+                        "%i.%i.%i.%i" % (data[0x30], data[0x31], data[0x32], data[0x33])
+                    ),
+                    "ip_mask": IpAddress(
+                        "%i.%i.%i.%i" % (data[0x34], data[0x35], data[0x36], data[0x37])
+                    ),
+                    "rx_ips": [],
+                },
             }
-        possible_addresses = [int(returnval['multicast']['base_ip'])]
-        mask_int = int(returnval['multicast']['ip_mask'])
+        possible_addresses = [int(returnval["multicast"]["base_ip"])]
+        mask_int = int(returnval["multicast"]["ip_mask"])
         for ctr in range(32):
             mask_bit = (mask_int >> ctr) & 1
             if not mask_bit:
@@ -548,9 +642,9 @@ class OneGbe(Memory, Gbe):
                 possible_addresses.extend(new_ips)
         tmp = list(set(possible_addresses))
         for ip in tmp:
-            returnval['multicast']['rx_ips'].append(IpAddress(ip))
+            returnval["multicast"]["rx_ips"].append(IpAddress(ip))
         if read_arp:
-            returnval['arp'] = self.get_arp_details(data)
+            returnval["arp"] = self.get_arp_details(data)
         if read_cpu:
             returnval.update(self.get_cpu_details(data))
         self.core_details = returnval
@@ -570,7 +664,7 @@ class OneGbe(Memory, Gbe):
 
         if port_dump is None:
             port_dump = self.parent.read(self.name, 16384)
-            port_dump = list(struct.unpack('>16384B', port_dump))
+            port_dump = list(struct.unpack(">16384B", port_dump))
         returnval = []
         for addr in range(256):
             mac = []
@@ -585,23 +679,23 @@ class OneGbe(Memory, Gbe):
 
         :param port_dump:
         """
-        #TODO Not memmap compliant
+        # TODO Not memmap compliant
         if port_dump is None:
             port_dump = self.parent.read(self.name, 16384)
-            port_dump = list(struct.unpack('>16384B', port_dump))
-        returnval = {'cpu_tx': {}}
+            port_dump = list(struct.unpack(">16384B", port_dump))
+        returnval = {"cpu_tx": {}}
         for ctr in range(4096 / 8):
             tmp = []
             for ctr2 in range(8):
                 tmp.append(port_dump[4096 + (8 * ctr) + ctr2])
-            returnval['cpu_tx'][ctr*8] = tmp
-        returnval['cpu_rx_buf_unack_data'] = port_dump[6 * 4 + 3]
-        returnval['cpu_rx'] = {}
+            returnval["cpu_tx"][ctr * 8] = tmp
+        returnval["cpu_rx_buf_unack_data"] = port_dump[6 * 4 + 3]
+        returnval["cpu_rx"] = {}
         for ctr in range(port_dump[6 * 4 + 3] + 8):
             tmp = []
             for ctr2 in range(8):
                 tmp.append(port_dump[8192 + (8 * ctr) + ctr2])
-            returnval['cpu_rx'][ctr * 8] = tmp
+            returnval["cpu_rx"][ctr * 8] = tmp
         return returnval
 
     def set_single_arp_entry(self, ip, mac):
@@ -615,8 +709,8 @@ class OneGbe(Memory, Gbe):
             arp_addr = OFFSET_ARP_CACHE
         else:
             arp_addr = 0x3000
-        arp_addr += 8*int(ip.split('.')[-1])
-        mac_pack = struct.pack('>Q', mac)
+        arp_addr += 8 * int(ip.split(".")[-1])
+        mac_pack = struct.pack(">Q", mac)
         self.parent.write(self.name, mac_pack, offset=arp_addr)
 
     def set_arp_table(self, macs):
@@ -629,7 +723,8 @@ class OneGbe(Memory, Gbe):
         else:
             arp_addr = 0x3000
         macs = list(macs)
-        macs_pack = struct.pack('>%dQ' % (len(macs)), *macs)
+        macs_pack = struct.pack(">%dQ" % (len(macs)), *macs)
         self.parent.write(self.name, macs_pack, offset=arp_addr)
+
 
 # end

@@ -31,11 +31,11 @@ class NamedFifo(object):
         return len(self.names)
 
 
-
 class DummyTransport(Transport):
     """
     A dummy transport for testing
     """
+
     def __init__(self, **kwargs):
         """
         Make a Dummy Transport
@@ -45,8 +45,10 @@ class DummyTransport(Transport):
         Transport.__init__(self, **kwargs)
         self._devices = NamedFifo(100)
         self._devices_wishbone = NamedFifo(100)
-        LOGGER.info('%s: port(%s) created and connected.' % (
-            self.host, sd.ETHERNET_CONTROL_PORT_ADDRESS))
+        LOGGER.info(
+            "%s: port(%s) created and connected."
+            % (self.host, sd.ETHERNET_CONTROL_PORT_ADDRESS)
+        )
 
     def connect(self, timeout=None):
         """
@@ -64,9 +66,7 @@ class DummyTransport(Transport):
         return True
 
     def is_connected(self):
-        """
-
-        """
+        """ """
         return True
 
     def test_connection(self):
@@ -101,7 +101,7 @@ class DummyTransport(Transport):
             return self._devices.pop(device_name)
         except ValueError:
             pass
-        return '\x00' * size
+        return "\x00" * size
 
     def blindwrite(self, device_name, data, offset=0):
         """
@@ -133,8 +133,9 @@ class DummyTransport(Transport):
         """
         pass
 
-    def upload_to_ram_and_program(self, filename, port=-1, timeout=10,
-                                  wait_complete=True, skip_verification=False):
+    def upload_to_ram_and_program(
+        self, filename, port=-1, timeout=10, wait_complete=True, skip_verification=False
+    ):
         """
         Upload an FPG file to RAM and then program the FPGA.
 
@@ -148,8 +149,9 @@ class DummyTransport(Transport):
         self.bitstream = filename
         return True
 
-    def upload_to_flash(self, binary_file, port=-1, force_upload=False,
-                        timeout=30, wait_complete=True):
+    def upload_to_flash(
+        self, binary_file, port=-1, force_upload=False, timeout=30, wait_complete=True
+    ):
         """
         Upload the provided binary file to the flash filesystem.
 
@@ -164,9 +166,7 @@ class DummyTransport(Transport):
         return True
 
     def get_system_information_from_transport(self):
-        """
-
-        """
+        """ """
         return self.bitstream, None
 
     def post_get_system_information(self):
@@ -210,7 +210,10 @@ class DummyTransport(Transport):
         """
         resp_ip = IpAddress(ip)
         resp_mask = IpAddress(mask)
-        LOGGER.debug('%s: multicast configured: addr(%s) mask(%s)' % (
-            gbename, resp_ip.ip_str, resp_mask.ip_str))
+        LOGGER.debug(
+            "%s: multicast configured: addr(%s) mask(%s)"
+            % (gbename, resp_ip.ip_str, resp_mask.ip_str)
+        )
+
 
 # end

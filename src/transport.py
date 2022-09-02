@@ -5,21 +5,21 @@ class Transport(object):
     """
     The actual network transport of data for a CasperFpga object.
     """
+
     def __init__(self, **kwargs):
         """
         Initialise the CasperFpga object
 
-        :param host: 
+        :param host:
         """
         self.host, self.bitstream = get_hostname(**kwargs)
         self.memory_devices = None
-        self.prog_info = {'last_uploaded': '', 'last_programmed': '',
-                          'system_name': ''}
+        self.prog_info = {"last_uploaded": "", "last_programmed": "", "system_name": ""}
         self.platform = None
 
     def connect(self, timeout=None):
         """
-        
+
         :param timeout:
         """
         pass
@@ -58,9 +58,7 @@ class Transport(object):
         raise NotImplementedError
 
     def disconnect(self):
-        """
-        
-        """
+        """ """
         pass
 
     def read(self, device_name, size, offset=0):
@@ -83,7 +81,7 @@ class Transport(object):
     def blindwrite(self, device_name, data, offset=0):
         """
         Write binary data to `device_name`, starting at `offset` bytes from `device_name`'s base address..
-        
+
         :param device_name: Name of device to be read
         :type device_name: String
         :param data: Data to write
@@ -115,8 +113,9 @@ class Transport(object):
         """
         pass
 
-    def upload_to_ram_and_program(self, filename, port=-1, timeout=10,
-                                  wait_complete=True, skip_verification=False):
+    def upload_to_ram_and_program(
+        self, filename, port=-1, timeout=10, wait_complete=True, skip_verification=False
+    ):
         """
         Upload an FPG file to RAM and then program the FPGA.
 
@@ -131,8 +130,9 @@ class Transport(object):
         """
         raise NotImplementedError
 
-    def upload_to_flash(self, binary_file, port=-1, force_upload=False,
-                        timeout=30, wait_complete=True):
+    def upload_to_flash(
+        self, binary_file, port=-1, force_upload=False, timeout=30, wait_complete=True
+    ):
         """
         Upload the provided binary file to the flash filesystem.
 
@@ -147,9 +147,7 @@ class Transport(object):
         raise NotImplementedError
 
     def get_system_information_from_transport(self):
-        """
-
-        """
+        """ """
         return self.bitstream, None
 
     def post_get_system_information(self):

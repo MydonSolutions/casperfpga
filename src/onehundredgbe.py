@@ -8,14 +8,15 @@ from .tengbe import TenGbe
 
 
 class OneHundredGbe(TenGbe):
-    """
-    """
+    """ """
+
     ADDR_ARP_WRITE_ENABLE = 0x1000
-    ADDR_ARP_READ_ENABLE  = 0x1004
-    ADDR_ARP_WRITE_DATA   = 0x1008
-    ADDR_ARP_WRITE_ADDR   = 0x100C
-    ADDR_ARP_READ_ADDR    = 0x1010
-    ADDR_ARP_READ_DATA    = 0x1014
+    ADDR_ARP_READ_ENABLE = 0x1004
+    ADDR_ARP_WRITE_DATA = 0x1008
+    ADDR_ARP_WRITE_ADDR = 0x100C
+    ADDR_ARP_READ_ADDR = 0x1010
+    ADDR_ARP_READ_DATA = 0x1014
+
     def set_single_arp_entry(self, ip, mac):
         """
         Set a single MAC address entry in the ARP table.
@@ -24,26 +25,34 @@ class OneHundredGbe(TenGbe):
         :param mac (int)   : MAC address to associate with this IP. Eg. 0x020304050607
         """
         # The 100G core reads the MAC little-endian. Casper registers are big-endian
-        mac = struct.unpack('>Q', struct.pack('<Q', (mac&0xffffffffffff)<<16))[0]
+        mac = struct.unpack(">Q", struct.pack("<Q", (mac & 0xFFFFFFFFFFFF) << 16))[0]
         # disable CPU ARP writes
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
         # disable CPU ARP reads
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_READ_ENABLE//4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_READ_ENABLE // 4)
         # TODO this is hardcoded for 512 entries
-        ip_octets = ip.split('.')
-        arp_addr = (int(ip_octets[-2])*256 + int(ip_octets[-1])) % 512
+        ip_octets = ip.split(".")
+        arp_addr = (int(ip_octets[-2]) * 256 + int(ip_octets[-1])) % 512
         # set address and data for LSBs
-        self.parent.write_int(self.name, 2*arp_addr, word_offset=self.ADDR_ARP_WRITE_ADDR//4)
-        self.parent.write_int(self.name, mac & 0xffffffff, word_offset=self.ADDR_ARP_WRITE_DATA//4)
+        self.parent.write_int(
+            self.name, 2 * arp_addr, word_offset=self.ADDR_ARP_WRITE_ADDR // 4
+        )
+        self.parent.write_int(
+            self.name, mac & 0xFFFFFFFF, word_offset=self.ADDR_ARP_WRITE_DATA // 4
+        )
         # toggle write
-        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
+        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
         # set address and data for MSBs
-        self.parent.write_int(self.name, 2*arp_addr + 1, word_offset=self.ADDR_ARP_WRITE_ADDR//4)
-        self.parent.write_int(self.name, mac >> 32, word_offset=self.ADDR_ARP_WRITE_DATA//4)
+        self.parent.write_int(
+            self.name, 2 * arp_addr + 1, word_offset=self.ADDR_ARP_WRITE_ADDR // 4
+        )
+        self.parent.write_int(
+            self.name, mac >> 32, word_offset=self.ADDR_ARP_WRITE_DATA // 4
+        )
         # toggle write
-        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
+        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
 
     def set_arp_table(self, macs):
         """Set the ARP table with a list of MAC addresses. The list, `macs`,
@@ -57,25 +66,34 @@ class OneHundredGbe(TenGbe):
             self.set_single_arp_entry("0.0.%d.%d" % (i // 256, i % 256), mac)
 
     def get_arp_details(self, N=256):
-        """ Get ARP details from this interface. """
+        """Get ARP details from this interface."""
         # disable CPU ARP writes
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE//4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_WRITE_ENABLE // 4)
         # enable CPU ARP reads
-        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_READ_ENABLE//4)
+        self.parent.write_int(self.name, 1, word_offset=self.ADDR_ARP_READ_ENABLE // 4)
         macs = []
-        for i in range(2*N):
+        for i in range(2 * N):
             # set address
-            self.parent.write_int(self.name, 2*i, word_offset=self.ADDR_ARP_READ_ADDR//4)
-            mac_lo = self.parent.read_uint(self.name, word_offset=self.ADDR_ARP_READ_DATA//4)
-            self.parent.write_int(self.name, 2*i+1, word_offset=self.ADDR_ARP_READ_ADDR//4)
-            mac_hi = self.parent.read_uint(self.name, word_offset=self.ADDR_ARP_READ_DATA//4)
+            self.parent.write_int(
+                self.name, 2 * i, word_offset=self.ADDR_ARP_READ_ADDR // 4
+            )
+            mac_lo = self.parent.read_uint(
+                self.name, word_offset=self.ADDR_ARP_READ_DATA // 4
+            )
+            self.parent.write_int(
+                self.name, 2 * i + 1, word_offset=self.ADDR_ARP_READ_ADDR // 4
+            )
+            mac_hi = self.parent.read_uint(
+                self.name, word_offset=self.ADDR_ARP_READ_DATA // 4
+            )
             mac = (mac_hi << 32) + mac_lo
-            mac = struct.unpack('<Q', struct.pack('>Q', (mac&0xffffffffffff)<<16))[0]
+            mac = struct.unpack("<Q", struct.pack(">Q", (mac & 0xFFFFFFFFFFFF) << 16))[
+                0
+            ]
             macs += [mac]
         # disable CPU ARP reads
-        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_READ_ENABLE//4)
+        self.parent.write_int(self.name, 0, word_offset=self.ADDR_ARP_READ_ENABLE // 4)
         return list(map(Mac, macs))
-        
 
     def _check_memmap_compliance(self):
         """

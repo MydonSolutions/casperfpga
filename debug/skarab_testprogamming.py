@@ -17,11 +17,12 @@ LOGGER = logging.getLogger(__name__)
 from corr2 import utils as corr2utils
 
 import casperfpga
+
 sd = casperfpga.skarab_definitions
 
-dnsmasq = ''
-hosts, lease_filename = corr2utils.hosts_from_dhcp_leases(host_pref='')
-print('Found %i roaches in %s.' % (len(hosts), lease_filename))
+dnsmasq = ""
+hosts, lease_filename = corr2utils.hosts_from_dhcp_leases(host_pref="")
+print("Found %i roaches in %s." % (len(hosts), lease_filename))
 # for ctr, host in enumerate(hosts):
 #     print('\t%03i: %s' % (ctr, host))
 results = {host: [0, 0] for host in hosts}
@@ -33,10 +34,10 @@ loopctr = 0
 newhosts = []
 for idx, h in enumerate(hosts):
     ip = socket.gethostbyname(h)
-    octet = ip[ip.index('.') + 1:]
-    octet = octet[octet.index('.') + 1:]
-    octet = octet[0:octet.index('.')]
-    if octet != '16':
+    octet = ip[ip.index(".") + 1 :]
+    octet = octet[octet.index(".") + 1 :]
+    octet = octet[0 : octet.index(".")]
+    if octet != "16":
         # print('adding', ip, octet)
         newhosts.append(h)
     else:
@@ -82,11 +83,12 @@ def toc():
 
 tic()
 fpgas = casperfpga.utils.threaded_create_fpgas_from_hosts(
-    hosts, timeout=2, best_effort=True)
-print('%i: ' % len(fpgas), toc())
+    hosts, timeout=2, best_effort=True
+)
+print("%i: " % len(fpgas), toc())
 
 tic()
-casperfpga.skarab_fileops.progska(fpgas, '/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg')
+casperfpga.skarab_fileops.progska(fpgas, "/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg")
 print(toc())
 raise RuntimeError
 
@@ -243,6 +245,7 @@ def mangle_fpgas(fpgas):
     for f in fpgas:
         f.transport.mangle()
 
+
 mangle_fpgas(fpgas)
 
 # tic()
@@ -256,13 +259,13 @@ import time
 
 skfops = casperfpga.skarab_fileops
 image_chunks, local_checksum = skfops.gen_image_chunks(
-    '/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg', True)
+    "/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg", True
+)
 
-print('Transmitting %i chunks' % len(image_chunks))
+print("Transmitting %i chunks" % len(image_chunks))
 
 
 class Consumer(multiprocessing.Process):
-
     def __init__(self, task_queue, result_queue):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
@@ -274,10 +277,10 @@ class Consumer(multiprocessing.Process):
             next_task = self.task_queue.get()
             if next_task is None:
                 # Poison pill means shutdown
-                print('%s: Exiting' % proc_name)
+                print("%s: Exiting" % proc_name)
                 self.task_queue.task_done()
                 break
-            print('%s: %s' % (proc_name, next_task))
+            print("%s: %s" % (proc_name, next_task))
             answer = next_task()
             self.task_queue.task_done()
             self.result_queue.put(answer)
@@ -295,13 +298,15 @@ class Task(object):
     def __call__(self):
         self.fpga.transport.unmangle()
         res = self.fpga.upload_to_ram_and_program(
-            filename=None, image_chunks=image_chunks,
+            filename=None,
+            image_chunks=image_chunks,
             image_checksum=local_checksum,
-            skip_wait=True)
+            skip_wait=True,
+        )
         return res
 
     def __str__(self):
-        return '%s(%i)' % (self.fpga.host, id(self.fpga))
+        return "%s(%i)" % (self.fpga.host, id(self.fpga))
 
 
 # Establish communication queues
@@ -313,7 +318,7 @@ num_consumers = multiprocessing.cpu_count() * 2
 
 num_consumers = 75
 
-print('Creating %d consumers' % num_consumers)
+print("Creating %d consumers" % num_consumers)
 consumers = [Consumer(tasks, results) for i in xrange(num_consumers)]
 for w in consumers:
     w.start()
@@ -333,7 +338,7 @@ tasks.join()
 # Start printing results
 while num_jobs:
     result = results.get()
-    print('Result:', result)
+    print("Result:", result)
     num_jobs -= 1
 print(toc())
 
@@ -341,8 +346,7 @@ raise RuntimeError
 
 tic()
 fpgas[101].transport.unmangle()
-fpgas[101].upload_to_ram_and_program(
-    '/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg')
+fpgas[101].upload_to_ram_and_program("/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg")
 print(toc())
 
 fpga = fpgas[0]
@@ -351,23 +355,24 @@ print(fpga.host, fpga.transport.lock, id(fpga))
 raise RuntimeError
 
 while loopctr < loops:
-    print('loop:%s' % loopctr)
+    print("loop:%s" % loopctr)
     for host in hosts:
-        print('\t%s' % host, end='')
+        print("\t%s" % host, end="")
         try:
             f = casperfpga.CasperFpga(host)
-            print(f.transport.get_virtex7_firmware_version(), end=' ')
-            print(f.transport.get_embedded_software_version(), end=' ')
+            print(f.transport.get_virtex7_firmware_version(), end=" ")
+            print(f.transport.get_embedded_software_version(), end=" ")
             res = f.upload_to_ram_and_program(
-                '/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg')
+                "/home/paulp/bofs/feng_ct_2017-12-16_0716.fpg"
+            )
             print(res)
             if not res:
                 raise RuntimeError
             results[host][0] += 1
-            print('pass')
+            print("pass")
         except Exception as e:
             results[host][1] += 1
-            print('fail - %s' % e.message)
+            print("fail - %s" % e.message)
     loopctr += 1
 print(results)
 
