@@ -149,5 +149,7 @@ fpga.upload_to_ram_and_program('your_file.fpg')
 
 Fork [this](https://github.com/casper-astro/casperfpga) repo, add your changes and issue a pull request.
 
+Also, please ensure that python files are formatted with `black`. The `setup_hooks` executable will ensure that `black` is installed and that `black .` is appeneded to `.git/hooks/pre-commit`.
+
 ## More documentation ##
 A link to `casperfpga` documentation on Read the Docs can be found [here](https://casper-toolflow.readthedocs.io/projects/casperfpga/en/latest/). The documentation there includes the information above, casperfpga sourcecode and links to other CASPER related documentation that may be of interest to users/contributers. 
